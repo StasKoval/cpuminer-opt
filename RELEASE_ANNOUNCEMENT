@@ -1,0 +1,82 @@
+        Release 3.1.5 of cpuminer-opt is available for download.
+
+
+All users are encouraged to upgrade.
+
+New in v3.1.8
+
+  - sib algo optimised:
+      +116% AES_NI + SSE2
+       +63% SSE2
+  - nist5 algo SSE optimised, in addition to previous AES_NI optimizations
+      +111% AES_NI + SSE2
+       +68% SSE2
+  - c11 algo +57% optimized for AES_NI & SSE2
+
+New in v3.1.7
+
+   - zr5 algo optimized for AES_NI and SSE2
+       +98% AES_NI + SSE2
+       +45% SSE2
+
+Recently added algos:
+
+  - x14 with AES_NI and SSE2 optimisations
+  - blake
+  - blake2s
+  - vanilla (blake256r14vnl).
+  - x17, blakecoin & fresh algos, benchmark tested only.
+
+Starting in release 3.1 a CPU with a minimum of SSE2 is required.
+This includes core2 and newer CPUs. Some algos also require AES_NI,
+see chart below.
+Users with non-SSE2 CPUs or who desire to mine algos not supported by
+cpuminer-opt may find cpuminer-multi by TPruvot useful.
+
+Performance chart for Intel i7-6700K @ 4 GHz, 16 GB mem.
+
+The normalisation rates have ben added to the chart to help with profit
+switching pools. Reference algo x11 = 1.
+
+Normalised profitability = algo profitability * normalisation rate
+
+               AES_NI    SSE2(1)   norm rate(5)
+               ------    ----      ---------
+quark          1195 K    924 K        1.6
+qubit          1090      765          1.45
+x11             740      525          1.0
+x13             373      298          0.50
+x14             357      271          0.48
+x15             333      270          0.45
+x17(2)          317      248          0.43
+nist5          2000     1592          3.37
+zr5             850      650          1.15    
+sib             540      404          0.73
+c11             733      475 K        0.99
+cryptonight     290 H    (3)          0.00039
+neoscrypt       (4)       32 K        0.043
+lyra2re         (4)      930          1.25
+lyra2rev2       (4)      495          0.65
+myr-gr          (4)     1560 K        2.1
+blake           (4)     22.4 M       30.4
+blake2s         (4)     17.5 M       23.6
+vanilla         (4)       33 M       44.6
+pentablake      (4)     3960 K        5.35
+keccak          (4)     7790 K       10.5
+axiom           (4)       72 H        0.098
+groestl         (4)      931          1.26 
+skein           (4)     5747          7.77
+skein2          (4)     8675         11.7
+blakecoin(2)    (4)     33.9 M       45.8
+fresh(2)        (4)      528 K        0.71
+cryptolight(2)  (4)      685 H        0.00093
+
+Footnotes:
+(1) SSE2 rates are simulated in software.
+(2) benchmark tested only
+(3) CPU architecture not supported for algo. It won't work.
+(4) AES_NI Optimization not available for CPU artchitecture. Uses SSE2, slower.
+(5) Normalised profitability = algo profitability * norm rate, x11 = 1
+Unlisted algos are in an unknown state
+
+

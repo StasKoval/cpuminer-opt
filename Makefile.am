@@ -1,0 +1,158 @@
+
+if WANT_JANSSON
+JANSSON_INCLUDES= -I$(top_srcdir)/compat/jansson
+else
+JANSSON_INCLUDES=
+endif
+
+EXTRA_DIST	= example-cfg.json nomacro.pl
+
+SUBDIRS		= compat
+
+ALL_INCLUDES	= @PTHREAD_FLAGS@ -fno-strict-aliasing $(JANSSON_INCLUDES) -I.
+
+bin_PROGRAMS	= cpuminer
+
+dist_man_MANS	= cpuminer.1
+
+cpuminer_SOURCES = \
+  cpu-miner.c \
+  util.c \
+  api.c \
+  sysinfos.c \
+  uint256.cpp \
+  algo-gate-api.c\
+  algo/groestl/sph_groestl.c \
+  algo/skein/sph_skein.c \
+  algo/bmw/sph_bmw.c \
+  algo/shavite/sph_shavite.c \
+  algo/shavite/shavite.c \
+  algo/echo/sph_echo.c \
+  algo/blake/sph_blake.c \
+  algo/heavy/sph_hefty1.c \
+  algo/blake/mod_blakecoin.c \
+  algo/luffa/sph_luffa.c \
+  algo/cubehash/sph_cubehash.c \
+  algo/simd/sph_simd.c \
+  algo/hamsi/sph_hamsi.c \
+  algo/fugue/sph_fugue.c \
+  algo/gost/sph_gost.c \
+  algo/jh/sph_jh.c \
+  algo/keccak/sph_keccak.c \
+  algo/keccak/keccak.c\
+  algo/sha3/sph_sha2.c \
+  algo/sha3/sph_sha2big.c \
+  algo/shabal/sph_shabal.c \
+  algo/whirlpool/sph_whirlpool.c\
+  crypto/blake2s.c \
+  crypto/oaes_lib.c \
+  crypto/c_keccak.c \
+  crypto/c_groestl.c \
+  crypto/c_blake256.c \
+  crypto/c_jh.c \
+  crypto/c_skein.c \
+  crypto/hash.c \
+  crypto/aesb.c \
+  algo/axiom.c \
+  algo/blake/blake.c \
+  algo/blake/blake2.c \
+  algo/blake/blakecoin.c \
+  algo/blake/pentablake.c \
+  algo/bmw/bmw256.c \
+  algo/c11.c \
+  algo/cubehash/sse2/cubehash_sse2.c\
+  algo/cryptolight.c \
+  algo/cryptonight/cryptonight-common.c\
+  algo/cryptonight/cryptonight-aesni.c\
+  algo/cryptonight/cryptonight-lobotomized.c\
+  algo/drop.c \
+  algo/echo/aes_ni/hash.c\
+  algo/fresh.c \
+  algo/groestl/groestl.c \
+  algo/groestl/sse2/grso.c\
+  algo/groestl/sse2/grso-asm.c\
+  algo/groestl/aes_ni/hash-groestl.c \
+  algo/haval/haval.c\
+  algo/heavy/heavy.c \
+  algo/luffa/luffa.c \
+  algo/luffa/sse2/luffa_for_sse2.c \
+  algo/lyra2/lyra2.c \
+  algo/lyra2/sponge.c \
+  algo/lyra2/lyra2rev2.c \
+  algo/lyra2/lyra2re.c \
+  algo/myr-groestl.c \
+  algo/keccak/sse2/keccak.c \
+  algo/quark/quark.c \
+  algo/qubit/qubit.c \
+  algo/neoscrypt.c \
+  algo/nist5.c \
+  algo/pluck.c \
+  algo/scrypt.c \
+  algo/sha2.c \
+  algo/sibcoin.c \
+  algo/simd/sse2/nist.c \
+  algo/simd/sse2/vector.c \
+  algo/skein/skein.c \
+  algo/skein/skein2.c \
+  algo/s3.c \
+  algo/x11/x11.c \
+  algo/x13/x13.c \
+  algo/x14/x14.c \
+  algo/x15/x15.c \
+  algo/x17/x17.c \
+  algo/yescrypt/yescrypt.c \
+  algo/yescrypt/yescrypt-common.c \
+  algo/yescrypt/sha256_Y.c\
+  algo/yescrypt/yescrypt-simd.c\
+  algo/zr5.c
+
+
+
+
+
+disable_flags =
+
+if USE_ASM
+   cpuminer_SOURCES += asm/neoscrypt_asm.S
+if ARCH_x86
+   cpuminer_SOURCES += asm/sha2-x86.S asm/scrypt-x86.S asm/aesb-x86.S
+endif
+if ARCH_x86_64
+   cpuminer_SOURCES += asm/sha2-x64.S asm/scrypt-x64.S asm/aesb-x64.S
+endif
+if ARCH_ARM
+   cpuminer_SOURCES += asm/sha2-arm.S asm/scrypt-arm.S
+endif
+else
+   disable_flags += -DNOASM
+endif
+
+if HAVE_WINDOWS
+   cpuminer_SOURCES += compat/winansi.c
+endif
+
+cpuminer_LDFLAGS	= @LDFLAGS@
+cpuminer_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+cpuminer_CPPFLAGS = @LIBCURL_CPPFLAGS@ $(ALL_INCLUDES)
+cpuminer_CFLAGS   = -Wno-pointer-sign -Wno-pointer-to-int-cast $(disable_flags)
+
+if HAVE_WINDOWS
+cpuminer_CFLAGS += -Wl,--stack,10485760
+endif
+
+if HAVE_WINDOWS
+# use to profile an object
+# gprof_cflags = -pg -g3
+# cpuminer_LDFLAGS += -pg
+# cpuminer_CFLAGS += -fno-inline-functions -static
+
+# copy/paste from generated Makefile
+common_ccflags = $(DEFS) $(ALL_INCLUDES) $(cpuminer_CPPFLAGS) $(CPPFLAGS) $(cpuminer_CFLAGS) $(CFLAGS)
+
+# special CFLAGS (if you find a simpler way to do that tell me ;)
+cpuminer-neoscrypt.o: neoscrypt.c
+	@echo "CUSTOM ${@}: ${filter %.o,${^}} ${filter %.c,${^}}"
+	$(CC) $(common_ccflags) -g -O3 $(gprof_cflags) -MT $@ -MD -MP -c -o $@ $<
+
+
+endif
