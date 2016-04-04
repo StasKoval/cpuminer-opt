@@ -457,6 +457,9 @@ json_t *json_rpc_call(CURL *curl, const char *url,
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	if (opt_cert)
 		curl_easy_setopt(curl, CURLOPT_CAINFO, opt_cert);
+//
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+
 	curl_easy_setopt(curl, CURLOPT_ENCODING, "");
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 0);
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
@@ -1138,7 +1141,6 @@ bool stratum_connect(struct stratum_ctx *sctx, const char *url)
 	}
 	sctx->sockbuf[0] = '\0';
 	pthread_mutex_unlock(&sctx->sock_lock);
-
 	if (url != sctx->url) {
 		free(sctx->url);
 		sctx->url = strdup(url);
@@ -1437,9 +1439,9 @@ bool stratum_authorize(struct stratum_ctx *sctx, const char *user, const char *p
 				if (!stratum_handle_method(sctx, sret))
 					applog(LOG_WARNING, "Stratum answer id is not correct!");
 			}
-			res_val = json_object_get(extra, "result");
-			if (opt_debug && (!res_val || json_is_false(res_val)))
-				applog(LOG_DEBUG, "extranonce subscribe not supported");
+//			res_val = json_object_get(extra, "result");
+//			if (opt_debug && (!res_val || json_is_false(res_val)))
+//				applog(LOG_DEBUG, "extranonce subscribe not supported");
 			json_decref(extra);
 		}
 		free(sret);
@@ -1775,10 +1777,10 @@ static bool stratum_set_difficulty(struct stratum_ctx *sctx, json_t *params)
 	sctx->next_diff = diff;
 	pthread_mutex_unlock(&sctx->work_lock);
 
-	/* store for api stats */
-	stratum_diff = diff;
-
-	applog(LOG_WARNING, "Stratum difficulty set to %g", diff);
+//	/* store for api stats */
+//	stratum_diff = diff;
+//
+//	applog(LOG_WARNING, "Stratum difficulty set to %g", diff);
 
 	return true;
 }
@@ -2047,11 +2049,41 @@ static char* format_hash(char* buf, uint8_t *hash)
 	return buf;
 }
 
+void applog_compare_hash(void *hash, void *hash_ref)
+{
+        char s[256] = "";
+        int len = 0;
+        uchar* hash1 = (uchar*)hash;
+        uchar* hash2 = (uchar*)hash_ref;
+        for (int i=0; i < 32; i += 4) {
+                const char *color = memcmp(hash1+i, hash2+i, 4) ? CL_WHT : CL_GRY;
+                len += sprintf(s+len, "%s%02x%02x%02x%02x " CL_GRY, color,
+                        hash1[i], hash1[i+1], hash1[i+2], hash1[i+3]);
+                s[len] = '\0';
+        }
+        applog(LOG_DEBUG, "%s", s);
+}
+
 void applog_hash(void *hash)
 {
 	char s[128] = {'\0'};
 	applog(LOG_DEBUG, "%s", format_hash(s, (uchar*) hash));
 }
+
+void applog_hex(void *data, int len)
+{
+        char* hex = abin2hex((uchar*)data, len);
+        applog(LOG_DEBUG, "%s", hex);
+        free(hex);
+}
+
+void applog_hash64(void *hash)
+{
+        char s[128] = {'\0'};
+        char t[128] = {'\0'};
+        applog(LOG_DEBUG, "%s %s", format_hash(s, (uchar*)hash), format_hash(t, &((uchar*)hash)[32]));
+}
+
 
 #define printpfx(n,h) \
 	printf("%s%11s%s: %s\n", CL_CYN, n, CL_N, format_hash(s, (uint8_t*) h))
@@ -2064,7 +2096,7 @@ void print_hash_tests(void)
 {
 	uchar *scratchbuf = NULL;
 	char hash[128], s[80];
-	char buf[128] = { 0 };
+	char buf[192] = { 0 };
         int algo;
 	scratchbuf = (uchar*) calloc(128, 1024);
 

@@ -1040,17 +1040,16 @@ static bool fulltest_le(const uint *hash, const uint *target)
     return(rc);
 }
 
-int scanhash_neoscrypt( int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_neoscrypt( int thr_id, struct work *work,
       uint32_t max_nonce, uint64_t *hashes_done )
 //      uint32_t max_nonce, uint64_t *hashes_done, uint32_t profile )
 
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
     uint32_t _ALIGN(64) hash[8];
     const uint32_t Htarg = ptarget[7];
     const uint32_t first_nonce = pdata[19];
-
-    //This option is not needed yet
-    uint32_t opt_nfactor = 0;
 
     while (pdata[19] < max_nonce && !work_restart[thr_id].restart)
     {
@@ -1070,18 +1069,17 @@ int scanhash_neoscrypt( int thr_id, uint32_t *pdata, const uint32_t *ptarget,
     return 0;
 }
 
-int64_t get_neoscrypt_max64( uint32_t scrypt_n, uint32_t nfactor )
+int64_t get_neoscrypt_max64()
 {
-     int64_t max64 = scrypt_n < 16 ? 0x3ffff : 0x3fffff / scrypt_n;
-     if ( nfactor > 3)
-         max64 >>= ( nfactor - 3);
-     else if ( nfactor > 16)
+     int64_t max64 = opt_scrypt_n < 16 ? 0x3ffff : 0x3fffff / opt_scrypt_n;
+     if ( opt_nfactor > 3)
+         max64 >>= ( opt_nfactor - 3);
+     else if ( opt_nfactor > 16)
          max64 = 0xF;
      return max64;
 }
 
-void neoscrypt_set_target( struct work* work, double job_diff, 
-                           double opt_diff_factor )
+void neoscrypt_set_target( struct work* work, double job_diff ) 
 {
  work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
@@ -1103,15 +1101,25 @@ void reverse_neoscrypt_endian( struct work* work )
 }
 
 void reverse_neoscrypt_endian_17_19( uint32_t* ntime, uint32_t* nonce,
-                                     uint32_t wd17,   uint32_t wd19 )
+                                     struct work* work )
 {
-   be32enc( ntime, wd17 );
-   be32enc( nonce, wd19 );
+   be32enc( ntime, work->data[17] );
+   be32enc( nonce, work->data[19] );
 }
 
-int set_neoscrypt_size( uint32_t data_size)
+void neoscrypt_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 {
-   return  80;
+   *data_size = 80;
+   *adata_sz = *data_size / sizeof(uint32_t);
+}
+
+void neoscrypt_set_data_and_target_size( int *data_size, int *target_size,
+                                   int *adata_sz,  int *atarget_sz )
+{
+   *data_size   = 80;
+   *target_size = 32;
+   *adata_sz    = *data_size   /  sizeof(uint32_t);
+   *atarget_sz  = *target_size /  sizeof(uint32_t);
 }
 
 bool register_neoscrypt_algo( algo_gate_t* gate )
@@ -1122,7 +1130,8 @@ bool register_neoscrypt_algo( algo_gate_t* gate )
   gate->get_max64            = (void*)&get_neoscrypt_max64;
   gate->set_target           = (void*)&neoscrypt_set_target;
   gate->wait_for_diff        = (void*)&neoscrypt_wait_for_diff;
-  gate->set_data_size        = (void*)&set_neoscrypt_size;
+  gate->set_data_size        = (void*)&neoscrypt_set_data_size;
+  gate->set_data_and_target_size = (void*)&neoscrypt_set_data_and_target_size;
   gate->reverse_endian       = (void*)&reverse_neoscrypt_endian;
   gate->reverse_endian_17_19 = (void*)&reverse_neoscrypt_endian_17_19;
   return true;

@@ -88,9 +88,11 @@ void lyra2rev2_hash(void *state, const void *input)
 	memcpy(state, hashB, 32);
 }
 
-int scanhash_lyra2rev2(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_lyra2rev2(int thr_id, struct work *work,
 	uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t _ALIGN(64) endiandata[20];
 	const uint32_t first_nonce = pdata[19];
 	uint32_t nonce = first_nonce;
@@ -127,9 +129,9 @@ int scanhash_lyra2rev2(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	return 0;
 }
 
-void lyra2rev2_set_target( struct work* work, double job_diff, double factor )
+void lyra2rev2_set_target( struct work* work, double job_diff )
 {
- work_set_target( work, job_diff / (256.0 * factor) );
+ work_set_target( work, job_diff / (256.0 * opt_diff_factor) );
 }
 
 bool register_lyra2rev2_algo( algo_gate_t* gate )

@@ -77,7 +77,6 @@ void init_zr5_ctx()
      sph_keccak512_init(&zr5_ctx.keccak);
 }  
 
-
 static void zr5hash(void *state, const void *input) {
     
 sph_keccak512_context    ctx_keccak;
@@ -153,9 +152,11 @@ static const int arrOrder[][4] =
 	memcpy(state, hash, 32);
 }
 
-int scanhash_zr5( int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_zr5( int thr_id, struct work *work,
                    uint32_t max_nonce, unsigned long *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
   uint32_t hash[16] __attribute__((aligned(64)));
   uint32_t tmpdata[20] __attribute__((aligned(64)));
   const uint32_t version = pdata[0] & (~POK_DATA_MASK);
@@ -172,14 +173,17 @@ int scanhash_zr5( int thr_id, uint32_t *pdata, const uint32_t *ptarget,
     zr5hash(hash, tmpdata);
     tmpdata[0] = version | (hash[0] & POK_DATA_MASK);
     zr5hash(hash, tmpdata);
-    if (hash[7] <= Htarg && fulltest(hash, ptarget))
+    if (hash[7] <= Htarg )
     {
-      pdata[0] = tmpdata[0];
-      pdata[19] = nonce;
-      *hashes_done = pdata[19] - first_nonce + 1;
-      if (opt_debug)
-        applog(LOG_INFO, "found nonce %x", nonce);
-      return 1;
+       if( fulltest(hash, ptarget) )
+       {
+         pdata[0] = tmpdata[0];
+         pdata[19] = nonce;
+         *hashes_done = pdata[19] - first_nonce + 1;
+         if (opt_debug)
+           applog(LOG_INFO, "found nonce %x", nonce);
+         return 1;
+       }
     }
     nonce++;
   } while (nonce < max_nonce && !work_restart[thr_id].restart);
@@ -195,21 +199,23 @@ int64_t zr5_get_max64 ()
   return 0x1fffffLL;
 }
 
-void zr5_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
+bool zr5_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
 {
      *wkcmp_sz -= sizeof(uint32_t);
      *wkcmp_offset = 1;
+     return false;
 }
 
-void zr5_display_pok ( uint32_t wd0 )
+void zr5_display_pok ( struct work* work )
 {
-      if ( wd0 & 0x00008000 )
-        applog(LOG_BLUE, "POK received: %08xx", wd0);
+      if ( work->data[0] & 0x00008000 )
+        applog(LOG_BLUE, "POK received: %08xx", work->data[0] );
 }
 
-int zr5_set_data_size( uint32_t data_size )
+void zr5_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 {
-   return 80;
+   *data_size = 80;
+   *adata_sz = *data_size / sizeof(uint32_t);
 }
 
 void zr5_set_data_and_target_size( int *data_size, int *target_size,
@@ -229,10 +235,10 @@ void zr5_reverse_endian( struct work* work )
 }
 
 void zr5_reverse_endian_17_19( uint32_t* ntime, uint32_t* nonce,
-                                uint32_t wd17,   uint32_t wd19 )
+                                struct work* work )
 {
-   be32enc( ntime, wd17 );
-   be32enc( nonce, wd19 );
+   be32enc( ntime, work->data[17] );
+   be32enc( nonce, work->data[19] );
 }
 
 bool register_zr5_algo( algo_gate_t* gate )
@@ -242,8 +248,8 @@ bool register_zr5_algo( algo_gate_t* gate )
     gate->hash          = (void*)&zr5hash;
     gate->hash_alt      = (void*)&zr5hash;
     gate->get_max64     = (void*)&zr5_get_max64;
-//    gate->ignore_pok    = (void*)&zr5_ignore_pok;
-//    gate->display_pok   = (void*)&zr5_display_pok;
+    gate->ignore_pok    = (void*)&zr5_ignore_pok;
+    gate->display_pok   = (void*)&zr5_display_pok;
     gate->set_data_size = (void*)&zr5_set_data_size;
     gate->set_data_and_target_size = (void*)&zr5_set_data_and_target_size;
     gate->reverse_endian       = (void*)&zr5_reverse_endian;

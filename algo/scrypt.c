@@ -693,10 +693,11 @@ static void scrypt_1024_1_1_256_24way(const uint32_t *input,
 }
 #endif /* HAVE_SCRYPT_6WAY */
 
-extern int scanhash_scrypt( int thr_id, uint32_t *pdata,
-         const uint32_t *ptarget, uint32_t max_nonce, uint64_t *hashes_done,
-         uint32_t N, unsigned char* scratchbuf )
+extern int scanhash_scrypt( int thr_id, struct work *work, uint32_t max_nonce,
+             uint64_t *hashes_done, unsigned char* scratchbuf )
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t data[SCRYPT_MAX_WAYS * 20], hash[SCRYPT_MAX_WAYS * 8];
 	uint32_t midstate[8];
 	uint32_t n = pdata[19] - 1;
@@ -722,25 +723,30 @@ extern int scanhash_scrypt( int thr_id, uint32_t *pdata,
 		
 #if defined(HAVE_SHA256_4WAY)
 		if (throughput == 4)
-			scrypt_1024_1_1_256_4way(data, hash, midstate, scratchbuf, N);
+			scrypt_1024_1_1_256_4way(data, hash, midstate,
+                             scratchbuf, opt_scrypt_n);
 		else
 #endif
 #if defined(HAVE_SCRYPT_3WAY) && defined(HAVE_SHA256_4WAY)
 		if (throughput == 12)
-			scrypt_1024_1_1_256_12way(data, hash, midstate, scratchbuf, N);
+			scrypt_1024_1_1_256_12way(data, hash, midstate,
+                              scratchbuf, opt_scrypt_n);
 		else
 #endif
 #if defined(HAVE_SCRYPT_6WAY)
 		if (throughput == 24)
-			scrypt_1024_1_1_256_24way(data, hash, midstate, scratchbuf, N);
+			scrypt_1024_1_1_256_24way(data, hash, midstate,
+                               scratchbuf, opt_scrypt_n);
 		else
 #endif
 #if defined(HAVE_SCRYPT_3WAY)
 		if (throughput == 3)
-			scrypt_1024_1_1_256_3way(data, hash, midstate, scratchbuf, N);
+			scrypt_1024_1_1_256_3way(data, hash, midstate,
+                                scratchbuf, opt_scrypt_n);
 		else
 #endif
-		scrypt_1024_1_1_256(data, hash, midstate, scratchbuf, N);
+		scrypt_1024_1_1_256(data, hash, midstate, scratchbuf,
+                                opt_scrypt_n);
 		
 		for (i = 0; i < throughput; i++) {
 			if (unlikely(hash[i * 8 + 7] <= Htarg && fulltest(hash + i * 8, ptarget))) {
@@ -756,7 +762,7 @@ extern int scanhash_scrypt( int thr_id, uint32_t *pdata,
 	return 0;
 }
 
-int64_t scrypt_get_max64( uint32_t opt_scrypt_n, uint32_t opt_nfactor )
+int64_t scrypt_get_max64()
 {
      int64_t max64 = opt_scrypt_n < 16 ? 0x3ffff : 0x3fffff / opt_scrypt_n;
      if ( opt_nfactor > 3)
@@ -766,13 +772,12 @@ int64_t scrypt_get_max64( uint32_t opt_scrypt_n, uint32_t opt_nfactor )
      return max64;
 }
 
-void scrypt_set_target( struct work* work, double job_diff,
-                            double opt_diff_factor )
+void scrypt_set_target( struct work* work, double job_diff )
 {
   work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
 
-bool get_scrypt_scratchbuf( char** scratchbuf, uint32_t opt_scrypt_n )
+bool get_scrypt_scratchbuf( char** scratchbuf )
 {
   *scratchbuf = scrypt_buffer_alloc( opt_scrypt_n );
   return  NULL == *scratchbuf ? false : true;

@@ -26,11 +26,11 @@ double hash_target_ratio(uint32_t* hash, uint32_t* target)
 }
 
 // store ratio in work struct
-void work_set_target_ratio(uint32_t* hash, uint32_t* target, struct work* work)
+void work_set_target_ratio( struct work* work, uint32_t* hash )
 {
 	// only if the option is enabled (to reduce cpu usage)
 	if (opt_showdiff) {
-		work->shareratio = hash_target_ratio(hash, target);
+		work->shareratio = hash_target_ratio(hash, work->target);
 		work->sharediff = work->targetdiff * work->shareratio;
 	}
 }

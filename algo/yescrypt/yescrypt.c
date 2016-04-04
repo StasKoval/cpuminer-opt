@@ -31,7 +31,7 @@ int scanhash_yescrypt(int thr_id, struct work *work, uint32_t max_nonce, uint64_
 		be32enc(&endiandata[19], n);
 		yescrypt_hash((char*) endiandata, (char*) vhash, 80);
 		if (vhash[7] < Htarg && fulltest(vhash, ptarget)) {
-			work_set_target_ratio(vhash, ptarget, work);
+			work_set_target_ratio( work, vhash );
 			*hashes_done = n - first_nonce + 1;
 			pdata[19] = n;
 printf("ret 1 scanhash_yescrypt\n");   
@@ -53,8 +53,7 @@ int64_t yescrypt_get_max64 ()
 }
 
 
-void yescrypt_set_target( struct work* work, double job_diff,
-                           double opt_diff_factor )
+void yescrypt_set_target( struct work* work, double job_diff )
 {
  work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }

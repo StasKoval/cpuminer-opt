@@ -41,6 +41,13 @@
 # endif
 #endif
 
+#ifndef min
+#define min(a,b) (a>b ? b : a)
+#endif
+#ifndef max 
+#define max(a,b) (a<b ? b : a)
+#endif
+
 //#ifdef HAVE_ALLOCA_H
 //# include <alloca.h>
 //#elif !defined alloca
@@ -268,8 +275,7 @@ void   work_set_target( struct work* work, double diff );
 double target_to_diff( uint32_t* target );
 
 double hash_target_ratio( uint32_t* hash, uint32_t* target );
-void   work_set_target_ratio( uint32_t* hash, uint32_t* target, 
-                         struct work* work );
+void   work_set_target_ratio( struct work* work, uint32_t* hash );
 
 void   get_currentalgo( char* buf, int sz );
 bool   has_aes_ni( void );
@@ -280,7 +286,7 @@ void   processor_id ( int functionnumber, int output[4] );
 float cpu_temp( int core );
 
 struct work {
-	uint32_t data[32];
+	uint32_t data[48];
 	uint32_t target[8];
 
 	double targetdiff;
@@ -396,8 +402,6 @@ struct work_restart {
         char padding[128 - sizeof(uint8_t)];
 };
 
-
-
 enum workio_commands {
         WC_GET_WORK,
         WC_SUBMIT_WORK,
@@ -410,7 +414,6 @@ struct workio_cmd {
                 struct work *work;
         } u;
 };
-
 
 enum algos {
         ALGO_SCRYPT,     
@@ -427,7 +430,7 @@ enum algos {
         ALGO_C11,         
         ALGO_CRYPTOLIGHT, 
         ALGO_CRYPTONIGHT, 
-        ALGO_DMD_GR,      
+        ALGO_DECRED,
         ALGO_DROP,        
         ALGO_FRESH,       
         ALGO_GROESTL,     
@@ -469,7 +472,7 @@ static const char *algo_names[] = {
         "c11",
         "cryptolight",
         "cryptonight",
-        "dmd-gr",
+        "decred",
         "drop",
         "fresh",
         "groestl",
@@ -482,7 +485,7 @@ static const char *algo_names[] = {
         "pluck",
         "qubit",
         "shavite3",
-        "sib",
+        "x11gost",
         "skein",
         "skein2",
         "s3",
@@ -499,9 +502,11 @@ static const char *algo_names[] = {
 
 extern enum algos opt_algo;
 extern bool opt_debug;
+extern bool opt_debug_diff;
 extern bool opt_benchmark;
 extern bool opt_protocol;
 extern bool opt_showdiff;
+extern bool opt_extranonce;
 extern bool opt_quiet;
 extern bool opt_redirect;
 extern int opt_timeout;
@@ -531,6 +536,9 @@ extern double net_diff;
 extern double net_hashrate;
 extern int opt_pluck_n;
 extern int opt_scrypt_n;
+extern double opt_diff_factor;
+extern unsigned int opt_nfactor;
+
 
   pthread_mutex_t rpc2_job_lock;
   pthread_mutex_t rpc2_login_lock;
@@ -547,21 +555,21 @@ Options:\n\
                           sha256d      SHA-256d\n\
                           axiom        Shabal-256 MemoHash\n\
                           blake        Blake-256 (SFR)\n\
-                          blakecoin    Blakecoin\n\
+                          blakecoin    blake256r8\n\
                           blake2s      Blake-2 S\n\
                           bmw          BMW 256\n\
-                          c11/flax     C11\n\
+                          c11          flax\n\
                           cryptolight  Cryptonight-light\n\
                           cryptonight  Monero\n\
-                          dmd-gr       Diamond-Groestl\n\
+                          decred\n\
                           drop         Dropcoin\n\
                           fresh        Fresh\n\
-                          groestl      GroestlCoin\n\
+                          groestl      groestl\n\
                           heavy        Heavy\n\
                           keccak       Keccak\n\
                           luffa        Luffa\n\
-                          lyra2re      Lyra2RE\n\
-                          lyra2rev2    Lyra2REv2 (Vertcoin)\n\
+                          lyra2re      lyra2\n\
+                          lyra2rev2    lyrav2\n\
                           myr-gr       Myriad-Groestl\n\
                           neoscrypt    NeoScrypt(128, 2, 1)\n\
                           nist5        Nist5\n\
@@ -570,11 +578,11 @@ Options:\n\
                           quark        Quark\n\
                           qubit        Qubit\n\
                           shavite3     Shavite3\n\
-                          sib          X11 + gost (SibCoin)\n\
+                          x11gost      sib (SibCoin)\n\
                           skein        Skein+Sha (Skeincoin)\n\
                           skein2       Double Skein (Woodcoin)\n\
                           s3           S3\n\
-                          vanilla\n\
+                          vanilla      blake256r8vnl\n\
                           x11          X11\n\
                           x13          X13\n\
                           x14          X14\n\

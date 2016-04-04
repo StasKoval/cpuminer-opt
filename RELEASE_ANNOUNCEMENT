@@ -1,10 +1,21 @@
-        Release 3.1.5 of cpuminer-opt is available for download.
+        Release 3.1.9 of cpuminer-opt is available for download.
 
 
 All users are encouraged to upgrade.
 
-New in v3.1.8
+New in v3.1.9
 
+   - added decred (blake256r14)
+   - myr-gr optimized for AES_NI, marginal increase in hashrate
+   - groestl, keccak & blakecoin fixed.
+   - x11gost is added as an alias for sib
+
+Other recently added or improved algos
+
+  - x14 added with AES_NI and SSE2 optimisations
+  - blake added
+  - blake2s added
+  - vanilla (blake256r8vnl) added
   - sib algo optimised:
       +116% AES_NI + SSE2
        +63% SSE2
@@ -12,24 +23,14 @@ New in v3.1.8
       +111% AES_NI + SSE2
        +68% SSE2
   - c11 algo +57% optimized for AES_NI & SSE2
-
-New in v3.1.7
-
-   - zr5 algo optimized for AES_NI and SSE2
+  - zr5 algo optimized for AES_NI and SSE2
        +98% AES_NI + SSE2
        +45% SSE2
-
-Recently added algos:
-
-  - x14 with AES_NI and SSE2 optimisations
-  - blake
-  - blake2s
-  - vanilla (blake256r14vnl).
-  - x17, blakecoin & fresh algos, benchmark tested only.
 
 Starting in release 3.1 a CPU with a minimum of SSE2 is required.
 This includes core2 and newer CPUs. Some algos also require AES_NI,
 see chart below.
+
 Users with non-SSE2 CPUs or who desire to mine algos not supported by
 cpuminer-opt may find cpuminer-multi by TPruvot useful.
 
@@ -42,9 +43,9 @@ Normalised profitability = algo profitability * normalisation rate
 
                AES_NI    SSE2(1)   norm rate(5)
                ------    ----      ---------
-quark          1195 K    924 K        1.6
+quark          1195 K    924 K        1.61
 qubit          1090      765          1.45
-x11             740      525          1.0
+x11             740      525          1
 x13             373      298          0.50
 x14             357      271          0.48
 x15             333      270          0.45
@@ -52,15 +53,16 @@ x17(2)          317      248          0.43
 nist5          2000     1592          3.37
 zr5             850      650          1.15    
 sib             540      404          0.73
-c11             733      475 K        0.99
+c11             733      475          0.99
+myr-gr         1572     1560          2.12
 cryptonight     290 H    (3)          0.00039
 neoscrypt       (4)       32 K        0.043
 lyra2re         (4)      930          1.25
 lyra2rev2       (4)      495          0.65
-myr-gr          (4)     1560 K        2.1
 blake           (4)     22.4 M       30.4
 blake2s         (4)     17.5 M       23.6
 vanilla         (4)       33 M       44.6
+decred          (4)     22.6 M       30.5 
 pentablake      (4)     3960 K        5.35
 keccak          (4)     7790 K       10.5
 axiom           (4)       72 H        0.098

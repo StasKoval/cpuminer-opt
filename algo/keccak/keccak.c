@@ -1,6 +1,7 @@
 #include "miner.h"
 #include "algo-gate-api.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -18,9 +19,11 @@ void keccakhash(void *state, const void *input)
 	memcpy(state, hash, 32);
 }
 
-int scanhash_keccak(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_keccak(int thr_id, struct work *work,
 	uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t n = pdata[19] - 1;
 	const uint32_t first_nonce = pdata[19];
 	//const uint32_t Htarg = ptarget[7];
@@ -51,15 +54,14 @@ int scanhash_keccak(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	return 0;
 }
 
-void keccak_gen_merkle_root ( char* merkle_root, struct stratum_cts* sctx )
+void keccak_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx )
 {
-// won't compile, but groestl does????
-//  SHA256( merkle_root, sctx->job.coinbase, (int)sctx->job.coinbase_size );
+  SHA256( sctx->job.coinbase, (int)sctx->job.coinbase_size, merkle_root );
 }
 
-void keccak_set_target( struct work* work, double job_diff, double factor )
+void keccak_set_target( struct work* work, double job_diff )
 {
-  work_set_target( work, job_diff / (128.0 * factor) );
+  work_set_target( work, job_diff / (128.0 * opt_diff_factor) );
 }
 
 bool register_keccak_algo( algo_gate_t* gate )

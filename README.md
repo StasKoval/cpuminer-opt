@@ -1,4 +1,4 @@
-This project is forked bu Jay D Dee.
+This project is forked by Jay D Dee.
 
 Building on linux:
 
@@ -10,22 +10,16 @@ standard development packages
 libssl-dev
 libcurl4-openssl-dev
 
-It is best to use "-march=[your cpu name]" for best performance.
-It sometimes works better than native, which in theory, should
-produce the same code.
-
-A list of CPU names can be found here:
-
-https://gcc.gnu.org/onlinedocs/gcc-4.9.2/gcc/i386-and-x86-64-Options.html
-
-A new option has been added to configure CFLAGS to disable AES_NI
-optimization. AES_NI is enabled by default.
-
-"-march-native" should work for most CPUS. Some hasve found they
+"-march-native" should work for most CPUS. Some have found they
 get better performance if they use the CPU's family name, ie haswell.
+
+Some users with AMD CPUs without AES_NI have reported compile problem
+using -march=native or a specific arch but have been successful 
+using -march=core2.
+
 Use was works best for you.
  
-Recent CPU with AES_NI (corei):
+Recent CPU with AES_NI (core i second gen):
 
 ./autogen.sh 
 ./configure CFLAGS="-O3 -march=native" --with-crypto --with-curl
@@ -37,7 +31,11 @@ Older CPU without AES_NI (core2):
 ./configure CFLAGS="-O3 -march=native -DNO_AES_NI" --with-crypto --with-curl
 make
 
-Support for even older x86_64 without AES_NI or SSE2 is not yet availble.
+Smoe users with AMD CPUs without AES_NI have reported compile problem
+using -march=native or a specific arch but have been successful
+using -march=core2.
+
+Support for even older x86_64 without AES_NI or SSE2 is not availble.
 
 A problem has been found with build.sh and it should not be used
 at this time.

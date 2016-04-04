@@ -209,9 +209,11 @@ void c11hash(void *output, const void *input)
 	memcpy(output, hash+64, 32);
 }
 
-int scanhash_c11(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_c11(int thr_id, struct work *work,
 	uint32_t max_nonce,	uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	const uint32_t first_nonce = pdata[19];
 	uint32_t _ALIGN(64) endiandata[20];
 	uint32_t nonce = first_nonce;

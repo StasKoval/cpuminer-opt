@@ -43,9 +43,11 @@ void blakecoinhash(void *state, const void *input)
 	memcpy(state, hash, 32);
 }
 
-int scanhash_blakecoin(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
-					uint32_t max_nonce, uint64_t *hashes_done)
+int scanhash_blakecoin(int thr_id, struct work *work, uint32_t max_nonce,
+                          uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	const uint32_t first_nonce = pdata[19];
 	uint32_t HTarget = ptarget[7];
 
@@ -97,7 +99,7 @@ int scanhash_blakecoin(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 
 void blakecoin_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx )
 {
- SHA256( merkle_root, sctx->job.coinbase, (int)sctx->job.coinbase_size );
+ SHA256( sctx->job.coinbase, (int)sctx->job.coinbase_size, merkle_root );
 }
 
 int64_t blakecoin_get_max64 ()

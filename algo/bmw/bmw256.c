@@ -20,9 +20,12 @@ void bmwhash(void *output, const void *input)
 */
 }
 
-int scanhash_bmw(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_bmw(int thr_id, struct work *work,
 	uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
+
  	uint32_t _ALIGN(64) hash64[8];
 	uint32_t _ALIGN(64) endiandata[20];
 

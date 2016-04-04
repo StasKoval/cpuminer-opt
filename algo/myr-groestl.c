@@ -6,11 +6,19 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "algo/groestl/sph_groestl.h"
+#ifdef NO_AES_NI
+  #include "algo/groestl/sph_groestl.h"
+#else
+  #include "algo/groestl/aes_ni/hash-groestl.h"
+#endif
 #include "algo/sha3/sph_sha2.h"
 
 typedef struct {
+#ifdef NO_AES_NI
     sph_groestl512_context  groestl;
+#else
+        hashState_groestl       groestl;
+#endif
     sph_sha256_context sha;
 } myrgr_ctx_holder;
 
@@ -18,7 +26,11 @@ myrgr_ctx_holder myrgr_ctx;
 
 void init_myrgr_ctx()
 {
+#ifdef NO_AES_NI
      sph_groestl512_init( &myrgr_ctx.groestl );
+#else
+        init_groestl (&myrgr_ctx.groestl );
+#endif
      sph_sha256_init(&myrgr_ctx.sha);
 }
 
@@ -34,8 +46,13 @@ void myriadhash(void *output, const void *input)
 	// memset(&hash[0], 0, sizeof(hash));
 
 //	sph_groestl512_init(&ctx);
+#ifdef NO_AES_NI
 	sph_groestl512(&ctx.groestl, input, 80);
 	sph_groestl512_close(&ctx.groestl, hash);
+#else
+        update_groestl( &ctx.groestl, (char*)hash,512);
+        final_groestl( &ctx.groestl, (char*)hash);
+#endif
 
 //	sph_sha256_init(&sha_ctx);
 	sph_sha256(&ctx.sha, hash, 64);
@@ -45,9 +62,12 @@ void myriadhash(void *output, const void *input)
 
 }
 
-int scanhash_myriad(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_myriad(int thr_id, struct work *work,
 	uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
+
 	uint32_t _ALIGN(64) endiandata[20];
 	const uint32_t first_nonce = pdata[19];
 	uint32_t nonce = first_nonce;

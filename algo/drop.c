@@ -212,21 +212,23 @@ int scanhash_drop(int thr_id, struct work *work, uint32_t max_nonce, uint64_t *h
 	return 0;
 }
 
-void drop_set_target( struct work* work, double job_diff,
-                                             double factor )
+void drop_set_target( struct work* work, double job_diff )
 {
- work_set_target( work, job_diff / (65536.0 * factor) );
+ work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
  
-void drop_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
+bool drop_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
 {
    *wkcmp_sz -= sizeof(uint32_t);
    *wkcmp_offset = 1;
+   return false;
 }
 
-int set_drop_size( uint32_t data_size )
+void drop_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 {
-   return 80;
+   *data_size = 80;
+   *adata_sz = *data_size / sizeof(uint32_t);
+
 }
 
 void reverse_drop_endian( struct work* work )
@@ -237,16 +239,25 @@ void reverse_drop_endian( struct work* work )
 }
 
 void reverse_drop_endian_17_19( uint32_t* ntime, uint32_t* nonce,
-                                uint32_t wd17,   uint32_t wd19 )
+                                struct work* work )
 {
-   be32enc( ntime, wd17);
-   be32enc( nonce, wd19);
+   be32enc( ntime, work->data[17] );
+   be32enc( nonce, work->data[19] );
 }
 
-void display_drop_pok ( uint32_t wd0 )
+void display_drop_pok ( struct work* work ) 
 {
-      if ( wd0 & 0x00008000 ) 
-        applog(LOG_BLUE, "POK received: %08xx", wd0);
+      if ( work->data[0] & 0x00008000 ) 
+        applog(LOG_BLUE, "POK received: %08xx", work->data[0] );
+}
+
+void drop_set_data_and_target_size( int *data_size, int *target_size,
+                                   int *adata_sz,  int *atarget_sz )
+{
+   *data_size   = 80;
+   *target_size = 32;
+   *adata_sz    = *data_size   /  sizeof(uint32_t);
+   *atarget_sz  = *target_size /  sizeof(uint32_t);
 }
 
 bool register_drop_algo( algo_gate_t* gate )
@@ -258,10 +269,11 @@ bool register_drop_algo( algo_gate_t* gate )
     gate->hash_suw             = (void*)&droplp_hash_pok;
     gate->set_target           = (void*)&drop_set_target;
     gate->ignore_pok           = (void*)&drop_ignore_pok;
-    gate->set_data_size        = (void*)&set_drop_size;
+    gate->set_data_size        = (void*)&drop_set_data_size;
     gate->reverse_endian       = (void*)&reverse_drop_endian;
     gate->reverse_endian_17_19 = (void*)&reverse_drop_endian_17_19;
     gate->display_pok          = (void*)&display_drop_pok;
+    gate->set_data_and_target_size = (void*)&drop_set_data_and_target_size;
     return true;
 };
 

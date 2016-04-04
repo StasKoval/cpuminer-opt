@@ -57,6 +57,7 @@ cpuminer_SOURCES = \
   algo/blake/blake.c \
   algo/blake/blake2.c \
   algo/blake/blakecoin.c \
+  algo/blake/decred.c \
   algo/blake/pentablake.c \
   algo/bmw/bmw256.c \
   algo/c11.c \

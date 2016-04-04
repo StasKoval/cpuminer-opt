@@ -87,10 +87,12 @@ void cryptonight_hash_suw( void *restrict output, const void *input )
 #endif
 }
 
-int scanhash_cryptonight( int thr_id, uint32_t *pdata,
-                   const uint32_t *ptarget, uint32_t max_nonce,
+int scanhash_cryptonight( int thr_id, struct work *work, uint32_t max_nonce,
                    uint64_t *hashes_done )
  {
+    uint32_t *pdata = work->data;
+    uint32_t *ptarget = work->target;
+
     uint32_t *nonceptr = (uint32_t*) (((char*)pdata) + 39);
     uint32_t n = *nonceptr - 1;
     const uint32_t first_nonce = n + 1;
@@ -124,12 +126,16 @@ bool cryptonight_use_rpc2()
 
 bool register_cryptonight_algo( algo_gate_t* gate )
 {
-//  gate->init_ctx = &init_x14_aes_ctx;
-  gate->scanhash  = &scanhash_cryptonight;
-  gate->hash      = &cryptonight_hash_aes;
-  gate->hash_suw  = &cryptonight_hash_aes;  // submit_upstream_work
-  gate->get_max64 = &cryptonight_get_max64;
-  gate->use_rpc2  = &cryptonight_use_rpc2;
+//  gate->init_ctx = &(void*)init_cryptonight_ctx;
+  gate->scanhash  = (void*)&scanhash_cryptonight;
+  gate->hash      = (void*)&cryptonight_hash_aes;
+  gate->hash_suw  = (void*)&cryptonight_hash_aes;  // submit_upstream_work
+  gate->get_max64 = (void*)&cryptonight_get_max64;
+  gate->use_rpc2  = (void*)&cryptonight_use_rpc2;
+
+// Does Wolf's AES cryptonight use rpc2? and does it need to disable extranonce?
+  jsonrpc_2       = true;
+//  opt_extranonce  = false;
   return true;
 };
 

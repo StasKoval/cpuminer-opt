@@ -443,10 +443,11 @@ void pluck_hash(uint32_t *hash, const uint32_t *data, uchar *hashbuffer, const i
 	memcpy(hash, hashbuffer, 32);
 }
 
-int scanhash_pluck(int thr_id, uint32_t *pdata,
-	unsigned char *scratchbuf, const uint32_t *ptarget,
-	uint32_t max_nonce, uint64_t *hashes_done, int N)
+int scanhash_pluck(int thr_id, struct work *work, uint32_t max_nonce,
+        uint64_t *hashes_done, unsigned char *scratchbuf  )
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t _ALIGN(64) endiandata[20];
 	uint32_t _ALIGN(64) hash[8];
 	const uint32_t first_nonce = pdata[19];
@@ -463,7 +464,7 @@ int scanhash_pluck(int thr_id, uint32_t *pdata,
 	do {
 		//be32enc(&endiandata[19], n);
 		endiandata[19] = n;
-		pluck_hash(hash, endiandata, scratchbuf, N);
+		pluck_hash(hash, endiandata, scratchbuf, opt_pluck_n);
 
 		if (hash[7] <= Htarg && fulltest(hash, ptarget))
 		{
@@ -484,10 +485,9 @@ int64_t pluck_get_max64 ()
   return 0x1ffLL;
 }
 
-void pluck_set_target( struct work* work, double job_diff,
-                                              double factor )
+void pluck_set_target( struct work* work, double job_diff )
 {
- work_set_target( work, job_diff / (65536.0 * factor) );
+ work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
 
 bool get_pluck_scratchbuf( char** scratchbuf )

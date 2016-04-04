@@ -8,8 +8,8 @@
 
 /* Move init out of loop, so init once externally,
  * and then use one single memcpy */
-static sph_blake256_context blake_mid;
-static bool ctx_midstate_done = false;
+static __thread sph_blake256_context blake_mid;
+static __thread bool ctx_midstate_done = false;
 
 static void init_blake_hash(void)
 {
@@ -19,8 +19,6 @@ static void init_blake_hash(void)
 
 void blakehash(void *state, const void *input)
 {
-
- 
 	sph_blake256_context ctx;
 
 	uint8_t hash[64];
@@ -32,6 +30,7 @@ void blakehash(void *state, const void *input)
 		init_blake_hash();
 		sph_blake256(&blake_mid, input, 64);
 	}
+
 	memcpy(&ctx, &blake_mid, sizeof(blake_mid));
 
 	sph_blake256(&ctx, ending, 16);
@@ -41,9 +40,11 @@ void blakehash(void *state, const void *input)
 
 }
 
-int scanhash_blake(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
-					uint32_t max_nonce, uint64_t *hashes_done)
+int scanhash_blake( int thr_id, struct work *work, uint32_t max_nonce,
+                      uint64_t *hashes_done )
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	const uint32_t first_nonce = pdata[19];
 	uint32_t HTarget = ptarget[7];
 

@@ -49,9 +49,11 @@ void lyra2re_hash(void *state, const void *input)
 	memcpy(state, hashA, 32);
 }
 
-int scanhash_lyra2re(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_lyra2re(int thr_id, struct work *work,
 	uint32_t max_nonce,	uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t _ALIGN(64) endiandata[20];
 	const uint32_t first_nonce = pdata[19];
 	uint32_t nonce = first_nonce;
@@ -70,10 +72,14 @@ int scanhash_lyra2re(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 		be32enc(&endiandata[19], nonce);
 		lyra2re_hash(hash, endiandata);
 
-		if (hash[7] <= Htarg && fulltest(hash, ptarget)) {
+		if (hash[7] <= Htarg )
+                {
+                   if ( fulltest(hash, ptarget) )
+                   {
 			pdata[19] = nonce;
 			*hashes_done = pdata[19] - first_nonce;
 			return 1;
+                   }
 		}
 		nonce++;
 
@@ -89,9 +95,9 @@ int64_t lyra2re_get_max64 ()
   return 0xffffLL;
 }
 
-void lyra2re_set_target ( struct work* work, double job_diff, double factor)
+void lyra2re_set_target ( struct work* work, double job_diff )
 {
-   work_set_target(work, job_diff / (128.0 * factor) );
+   work_set_target(work, job_diff / (128.0 * opt_diff_factor) );
 }
 
 bool register_lyra2re_algo( algo_gate_t* gate )

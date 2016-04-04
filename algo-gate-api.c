@@ -21,8 +21,8 @@
 void     null_init_ctx()
 {};
 
-int      null_scanhash(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
-                   uint32_t  max_nonce, uint64_t *hashes_done)
+int      null_scanhash(int thr_id, struct work* work,  uint32_t  max_nonce,
+              uint64_t *hashes_done, unsigned char* scratchbuf )
 {
    applog(LOG_WARNING,"SWERR: undefined scanhash function in algo_gate");
    return false;
@@ -54,21 +54,25 @@ bool null_get_scratchbuf( char** scratchbuf )
 };
 
 // This is the value for most, make it the default
-void null_gen_merkle_root( char* merkle_root, struct stratum_ctx* sctx )
+void null_gen_merkle_root( char* merkle_root, struct stratum_ctx* sctx,
+                  int* headersize, uint32_t* extraheader, int extraheader_size )
 {
   sha256d(merkle_root, sctx->job.coinbase, (int) sctx->job.coinbase_size);
 }
 
 // This is the value for most, make it default
-void null_set_target( struct work* work, double job_diff, double factor)
+void null_set_target( struct work* work, double job_diff )
 {
-   work_set_target( work, job_diff / factor );
+   work_set_target( work, job_diff / opt_diff_factor );
 }
 
-void null_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
-{}
+// this functions also used to set the regen-work flag for decred
+bool null_ignore_pok( int* wkcmp_sz, int* wkcmp_offset, int* nonce_oft )
+{
+  return false;
+}
 
-void null_display_pok ( uint32_t wd0 )
+void null_display_pok ( struct work* work, uint64_t* net_blocks )
 {}
 
 bool null_use_rpc2 ()
@@ -76,14 +80,13 @@ bool null_use_rpc2 ()
   return false; 
 }
 
-//arg is needed to null func can return original value unchanged
-int null_set_data_size( uint32_t data_size )
+void null_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 { 
-  return data_size;
+  *adata_sz = *data_size / sizeof(uint32_t);
 }
 
 void null_set_data_and_target_size( int *data_size, int *target_size,
-                                    int *adata_sz,  int *atarget_sz )
+              int *adata_sz,  int *atarget_sz, bool* allow_mininginfo )
 {}
 
 void null_wait_for_diff( struct stratum_ctx* stratum ) 
@@ -93,30 +96,87 @@ void null_reverse_endian ( struct work* work )
 {}
 
 void null_reverse_endian_17_19 (  uint32_t* ntime,  uint32_t* nonce,
-                                  uint32_t wd17, uint32_t wd19 )
-{}
+                                  struct work* work )
+{
+  le32enc( ntime, work->data[17] );
+  le32enc( nonce, work->data[19] );
+}
+
+// used by most algos
+void null_calc_network_diff ( struct work* work )
+{
+   // sample for diff 43.281 : 1c05ea29
+   // todo: endian reversed on longpoll could be zr5 specific...
+   uint32_t nbits = have_longpoll ? work->data[18] : swab32(work->data[18]);
+//   if (opt_algo == ALGO_DECRED) nbits = work->data[29];
+   uint32_t bits = (nbits & 0xffffff);
+   int16_t shift = (swab32(nbits) & 0xff); // 0x1c = 28
+
+   net_diff = (double)0x0000ffff / (double)bits;
+
+   for (int m=shift; m < 29; m++)
+       net_diff *= 256.0;
+   for (int m=29; m < shift; m++)
+       net_diff /= 256.0;
+//   if ( shift == 28 )
+//      net_diff *= 256.0; // testnet
+//   if (opt_debug_diff)
+//       applog(LOG_DEBUG, "net diff: %f -> shift %u, bits %08x", d, shift, bits);
+}
+
+unsigned char* null_get_xnonce2str( struct work* work, size_t xnonce1_size )
+{
+  return abin2hex(work->xnonce2, work->xnonce2_len);
+}
+
+void null_set_benchmark_work_data( struct work* work )
+{
+   work->data[20] = 0x80000000;
+   work->data[31] = 0x00000280;
+}
+
+void null_build_extraheader( struct work* work, struct stratum_ctx* sctx,
+                              uint32_t* extraheader, int headersize )
+{
+   work->data[17] = le32dec(sctx->job.ntime);
+   work->data[18] = le32dec(sctx->job.nbits);
+   work->data[20] = 0x80000000;
+   work->data[31] = 0x00000280;
+}
+
+
+bool null_prevent_dupes( uint32_t* nonceptr, struct work* work,
+                         struct stratum_ctx* stratum, int thr_id )
+{
+  return false;
+}
 
 // initialise all functions to null
 
 init_null_algo_gate( algo_gate_t* gate )
 {
-   gate->scanhash             = (void*)&null_scanhash;
-   gate->hash                 = (void*)&null_hash;
-   gate->hash_alt             = (void*)&null_hash_alt;
-   gate->hash_suw             = (void*)&null_hash_suw;
-   gate->init_ctx             = (void*)&null_init_ctx;
-   gate->get_max64            = (void*)&null_get_max64;
-   gate->get_scratchbuf       = (void*)&null_get_scratchbuf;
-   gate->gen_merkle_root      = (void*)&null_gen_merkle_root;
-   gate->set_target           = (void*)&null_set_target;
-   gate->ignore_pok           = (void*)&null_ignore_pok;
-   gate->display_pok          = (void*)&null_display_pok;
-   gate->use_rpc2             = (void*)&null_use_rpc2;
-   gate->set_data_size        = (void*)&null_set_data_size;
+   gate->scanhash                 = (void*)&null_scanhash;
+   gate->hash                     = (void*)&null_hash;
+   gate->hash_alt                 = (void*)&null_hash_alt;
+   gate->hash_suw                 = (void*)&null_hash_suw;
+   gate->init_ctx                 = (void*)&null_init_ctx;
+   gate->get_max64                = (void*)&null_get_max64;
+   gate->get_scratchbuf           = (void*)&null_get_scratchbuf;
+   gate->gen_merkle_root          = (void*)&null_gen_merkle_root;
+   gate->set_target               = (void*)&null_set_target;
+   gate->ignore_pok               = (void*)&null_ignore_pok;
+   gate->display_pok              = (void*)&null_display_pok;
+   gate->use_rpc2                 = (void*)&null_use_rpc2;
+   gate->set_data_size            = (void*)&null_set_data_size;
    gate->set_data_and_target_size = (void*)&null_set_data_and_target_size;
-   gate->wait_for_diff        = (void*)&null_wait_for_diff;
-   gate->reverse_endian       = (void*)&null_reverse_endian;
-   gate->reverse_endian_17_19 = (void*)&null_reverse_endian_17_19;
+   gate->wait_for_diff            = (void*)&null_wait_for_diff;
+   gate->reverse_endian           = (void*)&null_reverse_endian;
+   gate->reverse_endian_17_19     = (void*)&null_reverse_endian_17_19;
+   gate->calc_network_diff        = (void*)&null_calc_network_diff;
+   gate->get_xnonce2str           = (void*)&null_get_xnonce2str;
+   gate->set_benchmark_work_data  = (void*)&null_set_benchmark_work_data;
+   gate->build_extraheader       = (void*)&null_build_extraheader;
+   gate->prevent_dupes            = (void*)&null_prevent_dupes;
 }
 
 // called by each thread that uses the gate
@@ -172,13 +232,15 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
      case ALGO_CRYPTONIGHT:
         register_cryptonight_algo( gate );
         break;
+     case ALGO_DECRED:
+        register_decred_algo( gate );
+        break;
      case ALGO_DROP:
         register_drop_algo( gate );
         break;
      case ALGO_FRESH:
         register_fresh_algo( gate );
         break;
-     case ALGO_DMD_GR:
      case ALGO_GROESTL:
         register_groestl_algo( gate );
         break;
@@ -296,14 +358,16 @@ const char* algo_alias_map[][2] =
 //   alias                proper
   { "blake256r8",        "blakecoin"   },
   { "blake256r8vnl",     "vanilla"     },
+  { "blake256r14",       "decred"      },
   { "cryptonight-light", "cryptolight" },
+  { "dmd-gr",            "groestl"     },
   { "droplp",            "drop"        },
   { "flax",              "c11"         },
   { "lyra2",             "lyra2re"     },
   { "lyra2v2",           "lyra2rev2"   },
   { "myriad",            "myr-gr"      },
   { "neo",               "neoscrypt"   },
-  { "sibcoin",           "sib"         },
+  { "sib",               "x11gost"     },
   { "ziftr",             "zr5"         },
   { NULL,                NULL          }   
 };

@@ -10,7 +10,6 @@
 
 //#ifndef NO_AES_NI
 //  #include "algo/groestl/aes_ni/hash-groestl.h"
-//  #include "algo/echo/aes_ni/hash_api.h"
 //#endif
 
 typedef struct
@@ -20,6 +19,7 @@ typedef struct
 //#else
     sph_groestl512_context  groestl;
 //#endif
+
 } groestl_ctx_holder;
 
 static __thread groestl_ctx_holder groestl_ctx;
@@ -29,7 +29,7 @@ void init_groestl_ctx()
 //#ifndef NO_AES_NI
 //    init_groestl( &groestl_ctx.groestl );
 //#else
-     sph_groestl512_init( &groestl_ctx.groestl );
+    sph_groestl512_init( &groestl_ctx.groestl );
 //#endif
 }
 
@@ -44,7 +44,7 @@ void groestlhash(void *output, const void *input)
 //     memset(&hash[0], 0, sizeof(hash));
 
 //#ifndef NO_AES_NI
-//     update_groestl( &ctx.groestl, (char*)input,80);
+//     update_groestl( &ctx.groestl, (char*)input, 512 );
 //     final_groestl( &ctx.groestl,(char*)hash);
 //
 //     update_groestl( &ctx.groestl, (char*)hash,64);
@@ -57,12 +57,13 @@ void groestlhash(void *output, const void *input)
 	sph_groestl512_close(&ctx.groestl, hash);
 //#endif
 	memcpy(output, hash, 32);
-
  }
 
-int scanhash_groestl(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
+int scanhash_groestl(int thr_id, struct work *work,
 	uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
         uint32_t _ALIGN(64) endiandata[20];
 	const uint32_t first_nonce = pdata[19];
 	uint32_t nonce = first_nonce;
@@ -98,13 +99,12 @@ int scanhash_groestl(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 
 unsigned char groestl_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx )
 {
- SHA256( merkle_root, sctx->job.coinbase, (int)sctx->job.coinbase_size );
+ SHA256( sctx->job.coinbase, (int)sctx->job.coinbase_size, merkle_root );
 }
 
-void groestl_set_target( struct work* work, double job_diff,
-                         double factor )
+void groestl_set_target( struct work* work, double job_diff )
 {
- work_set_target( work, job_diff / (256.0 * factor) );
+ work_set_target( work, job_diff / (256.0 * opt_diff_factor) );
 }
 
 

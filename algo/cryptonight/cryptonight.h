@@ -67,8 +67,8 @@ extern void (* const extra_hashes[4])(const void *, size_t, char *);
 
 #endif
 
-int scanhash_cryptonight( int thr_id, uint32_t *pdata, 
-          const uint32_t *ptarget, uint32_t max_nonce, uint64_t *hashes_done );
+int scanhash_cryptonight( int thr_id, struct work *work, uint32_t max_nonce,
+                           uint64_t *hashes_done );
 
 void cryptonight_hash_aes( void *restrict output, const void *input, int len );
 

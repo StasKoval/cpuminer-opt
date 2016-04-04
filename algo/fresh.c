@@ -45,9 +45,11 @@ extern void freshhash(void* output, const void* input, uint32_t len)
 	memcpy(output, hash, 32);
 }
 
-int scanhash_fresh(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
-					uint32_t max_nonce, uint64_t *hashes_done)
+int scanhash_fresh(int thr_id, struct work *work,
+				uint32_t max_nonce, uint64_t *hashes_done)
 {
+        uint32_t *pdata = work->data;
+        uint32_t *ptarget = work->target;
 	uint32_t len = 80;
 
 	uint32_t n = pdata[19] - 1;
@@ -118,10 +120,9 @@ int scanhash_fresh(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	return 0;
 }
 
-void fresh_set_target( struct work* work, double job_diff,
-                                                double factor )
+void fresh_set_target( struct work* work, double job_diff )
 {
- work_set_target( work, job_diff / (256.0 * factor) );
+ work_set_target( work, job_diff / (256.0 * opt_diff_factor) );
 }
 
 
