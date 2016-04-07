@@ -197,6 +197,11 @@ void sha256_transform_8way(uint32_t *state, const uint32_t *block, int swap);
 
 struct work;
 
+void work_free(struct work *w);
+void work_copy(struct work *dest, const struct work *src);
+
+
+
 /* api related */
 void *api_thread(void *userdata);
 
@@ -273,6 +278,7 @@ int    timeval_subtract( struct timeval *result, struct timeval *x,
 bool   fulltest( const uint32_t *hash, const uint32_t *target );
 void   work_set_target( struct work* work, double diff );
 double target_to_diff( uint32_t* target );
+extern void diff_to_target(uint32_t *target, double diff);
 
 double hash_target_ratio( uint32_t* hash, uint32_t* target );
 void   work_set_target_ratio( struct work* work, uint32_t* hash );
@@ -361,6 +367,7 @@ extern char *rpc2_blob;
 extern size_t rpc2_bloblen;
 extern uint32_t rpc2_target;
 extern char *rpc2_job_id;
+extern char *rpc_user;
 
 
 json_t *json_rpc2_call(CURL *curl, const char *url, const char *userpass, const char *rpc_req, int *curl_err, int flags);
@@ -434,6 +441,7 @@ enum algos {
         ALGO_DROP,        
         ALGO_FRESH,       
         ALGO_GROESTL,     
+        ALGO_HODL,
         ALGO_LUFFA,       
         ALGO_LYRA2RE,       
         ALGO_LYRA2REV2,   
@@ -476,6 +484,7 @@ static const char *algo_names[] = {
         "drop",
         "fresh",
         "groestl",
+        "hodl",
         "luffa",
         "lyra2re",
         "lyra2rev2",
@@ -538,12 +547,12 @@ extern int opt_pluck_n;
 extern int opt_scrypt_n;
 extern double opt_diff_factor;
 extern unsigned int opt_nfactor;
+extern bool opt_randomize;
 
-
-  pthread_mutex_t rpc2_job_lock;
-  pthread_mutex_t rpc2_login_lock;
-  pthread_mutex_t applog_lock;
-  pthread_mutex_t stats_lock;
+extern pthread_mutex_t rpc2_job_lock;
+extern pthread_mutex_t rpc2_login_lock;
+extern pthread_mutex_t applog_lock;
+extern pthread_mutex_t stats_lock;
 
 
 static char const usage[] = "\
@@ -565,6 +574,7 @@ Options:\n\
                           drop         Dropcoin\n\
                           fresh        Fresh\n\
                           groestl      groestl\n\
+                          hodl         hodlcoin\n\
                           heavy        Heavy\n\
                           keccak       Keccak\n\
                           luffa        Luffa\n\

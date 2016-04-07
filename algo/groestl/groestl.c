@@ -115,7 +115,7 @@ bool register_groestl_algo( algo_gate_t* gate )
     gate->hash       = (void*)&groestlhash;
     gate->hash_alt   = (void*)&groestlhash;
     gate->set_target = (void*)&groestl_set_target;
-    gate->gen_merkle_root = &groestl_gen_merkle_root;
+    gate->gen_merkle_root = (void*)&groestl_gen_merkle_root;
     return true;
 };
 

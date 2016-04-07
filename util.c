@@ -45,7 +45,7 @@
 #include "elist.h"
 #include "algo-gate-api.h"
 
-extern pthread_mutex_t stats_lock;
+//extern pthread_mutex_t stats_lock;
 
 struct data_buffer {
 	void		*buf;
@@ -1457,8 +1457,8 @@ out:
 
 // -------------------- RPC 2.0 (XMR/AEON) -------------------------
 
-extern pthread_mutex_t rpc2_login_lock;
-extern pthread_mutex_t rpc2_job_lock;
+//extern pthread_mutex_t rpc2_login_lock;
+//extern pthread_mutex_t rpc2_job_lock;
 
 bool rpc2_login_decode(const json_t *val)
 {
@@ -1617,10 +1617,10 @@ bool rpc2_job_decode(const json_t *job, struct work *work)
 		jobj_binary(job, "target", &target, 4);
 		if(rpc2_target != target) {
 			double hashrate = 0.0;
-			pthread_mutex_lock(&stats_lock);
+                        pthread_mutex_lock(&stats_lock);
 			for (int i = 0; i < opt_n_threads; i++)
 				hashrate += thr_hashrates[i];
-			pthread_mutex_unlock(&stats_lock);
+                        pthread_mutex_unlock(&stats_lock);
 			double difficulty = (((double) 0xffffffff) / target);
 			if (!opt_quiet) {
 				// xmr pool diff can change a lot...
@@ -2084,13 +2084,8 @@ void applog_hash64(void *hash)
         applog(LOG_DEBUG, "%s %s", format_hash(s, (uchar*)hash), format_hash(t, &((uchar*)hash)[32]));
 }
 
-
 #define printpfx(n,h) \
 	printf("%s%11s%s: %s\n", CL_CYN, n, CL_N, format_hash(s, (uint8_t*) h))
-
-
-
-
 
 void print_hash_tests(void)
 {

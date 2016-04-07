@@ -13,10 +13,30 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <memory.h>
 #include "miner.h"
 #include "algo-gate-api.h"
 
 // define null functions
+
+// null vs default: strictly speaking a null function should do nothing
+// and a default function should do what satisfies the most clients (algos).
+// This distinction is blurred and the two function types are combined.
+// A null function is either a true do-nothing or it is the default
+// action. The only rule is that if even a single client requires a do-nothing
+// function it must be the null function. This will require every other
+// client to define and register a custom function. In some cases where
+// many clients require the same action it may be desireable to define
+// an explicit default do-something function here that will eliminate
+// the need for those clients to each define their own. The must still
+// register the default.
+// As algo-gate evolves some function are taking on multiple personalities.
+// The same function could perform completely unrelated actions for
+// different algos, they jut happen to require that action at the same
+// point. The function names could become confusing.
+// TODO: make names more generic. Determine a plan forward for the evolution
+// of aggo-gate, whether to have many smaller, unique gate functions or
+// fewer, larger functions with more code duplication.
 
 void     null_init_ctx()
 {};
@@ -92,6 +112,14 @@ void null_set_data_and_target_size( int *data_size, int *target_size,
 void null_wait_for_diff( struct stratum_ctx* stratum ) 
 {}
 
+void null_build_stratum_request( char* req, struct work* work,
+               unsigned char *xnonce2str, char* ntimestr, char* noncestr )
+{
+   snprintf( req, JSON_BUF_LEN,
+        "{\"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\":4}",
+         rpc_user, work->job_id, xnonce2str, ntimestr, noncestr );
+}
+
 void null_reverse_endian ( struct work* work )
 {}
 
@@ -108,7 +136,6 @@ void null_calc_network_diff ( struct work* work )
    // sample for diff 43.281 : 1c05ea29
    // todo: endian reversed on longpoll could be zr5 specific...
    uint32_t nbits = have_longpoll ? work->data[18] : swab32(work->data[18]);
-//   if (opt_algo == ALGO_DECRED) nbits = work->data[29];
    uint32_t bits = (nbits & 0xffffff);
    int16_t shift = (swab32(nbits) & 0xff); // 0x1c = 28
 
@@ -118,10 +145,6 @@ void null_calc_network_diff ( struct work* work )
        net_diff *= 256.0;
    for (int m=29; m < shift; m++)
        net_diff /= 256.0;
-//   if ( shift == 28 )
-//      net_diff *= 256.0; // testnet
-//   if (opt_debug_diff)
-//       applog(LOG_DEBUG, "net diff: %f -> shift %u, bits %08x", d, shift, bits);
 }
 
 unsigned char* null_get_xnonce2str( struct work* work, size_t xnonce1_size )
@@ -151,32 +174,72 @@ bool null_prevent_dupes( uint32_t* nonceptr, struct work* work,
   return false;
 }
 
+void null_thread_barrier_init()
+{}
+
+void null_thread_barrier_wait()
+{}
+
+void null_copy_workdata ( struct work* work, struct work* g_work,
+     uint32_t **nonceptr, int wkcmp_offset, int wkcmp_sz, int nonce_oft,
+     int thr_id )
+{
+   // nonceptr s a clone of the parent. It doesn't get modified in
+   // this function, only the data it points to is modified.
+   // WRONG, it does get updated from new work.
+//  uint32_t *nonceptr = (uint32_t*)( ( (char*)work->data ) + nonce_oft );
+
+   if ( memcmp( &work->data[wkcmp_offset], &g_work->data[wkcmp_offset],
+                    wkcmp_sz )
+          || jsonrpc_2 ? memcmp( ( (uint8_t*) work->data ) + 43,
+                                 ( (uint8_t*) g_work->data ) + 43, 33 ) : 0 )
+   {
+       work_free( work );
+       work_copy( work, g_work );
+       *nonceptr = (uint32_t*)( ( (char*)work->data ) + nonce_oft );
+       *nonceptr[0] = 0xffffffffU / opt_n_threads * thr_id;
+       if ( opt_randomize )
+             *nonceptr[0] += ( (rand() *4 ) & UINT32_MAX ) / opt_n_threads;
+   }
+   else
+       ++(*nonceptr[0]);
+}
+
+void null_get_pseudo_random_data ( struct work* work, char* scratchbuf,
+                                      int thr_id )
+{}
+
 // initialise all functions to null
 
-init_null_algo_gate( algo_gate_t* gate )
+void init_null_algo_gate( algo_gate_t* gate )
 {
    gate->scanhash                 = (void*)&null_scanhash;
    gate->hash                     = (void*)&null_hash;
    gate->hash_alt                 = (void*)&null_hash_alt;
    gate->hash_suw                 = (void*)&null_hash_suw;
    gate->init_ctx                 = (void*)&null_init_ctx;
+   gate->ignore_pok               = (void*)&null_ignore_pok;
+   gate->display_pok              = (void*)&null_display_pok;
+   gate->wait_for_diff            = (void*)&null_wait_for_diff;
    gate->get_max64                = (void*)&null_get_max64;
    gate->get_scratchbuf           = (void*)&null_get_scratchbuf;
    gate->gen_merkle_root          = (void*)&null_gen_merkle_root;
+   gate->build_stratum_request    = (void*)&null_build_stratum_request;
    gate->set_target               = (void*)&null_set_target;
-   gate->ignore_pok               = (void*)&null_ignore_pok;
-   gate->display_pok              = (void*)&null_display_pok;
    gate->use_rpc2                 = (void*)&null_use_rpc2;
    gate->set_data_size            = (void*)&null_set_data_size;
    gate->set_data_and_target_size = (void*)&null_set_data_and_target_size;
-   gate->wait_for_diff            = (void*)&null_wait_for_diff;
    gate->reverse_endian           = (void*)&null_reverse_endian;
    gate->reverse_endian_17_19     = (void*)&null_reverse_endian_17_19;
    gate->calc_network_diff        = (void*)&null_calc_network_diff;
    gate->get_xnonce2str           = (void*)&null_get_xnonce2str;
    gate->set_benchmark_work_data  = (void*)&null_set_benchmark_work_data;
-   gate->build_extraheader       = (void*)&null_build_extraheader;
+   gate->build_extraheader        = (void*)&null_build_extraheader;
    gate->prevent_dupes            = (void*)&null_prevent_dupes;
+   gate->thread_barrier_init      = (void*)&null_thread_barrier_init;
+   gate->thread_barrier_wait      = (void*)&null_thread_barrier_wait;
+   gate->copy_workdata            = (void*)&null_copy_workdata;
+   gate->get_pseudo_random_data   = (void*)&null_get_pseudo_random_data;
 }
 
 // called by each thread that uses the gate
@@ -243,6 +306,9 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
         break;
      case ALGO_GROESTL:
         register_groestl_algo( gate );
+        break;
+     case ALGO_HODL:
+        register_hodl_algo( gate );
         break;
      case ALGO_LUFFA:
         register_luffa_algo( gate );

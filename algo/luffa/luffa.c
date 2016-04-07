@@ -59,10 +59,8 @@ int scanhash_luffa(int thr_id, struct work *work,
 bool register_luffa_algo( algo_gate_t* gate )
 {
 //  gate->init_ctx = &init_luffa_ctx;
-    gate->scanhash = &scanhash_luffa;
-    gate->hash     = &luffahash;
-//  gate->get_max64 = &luffa_get_max64;
-//  gate->custom_opt = &luffa_opt
+    gate->scanhash = (void*)&scanhash_luffa;
+    gate->hash     = (void*)&luffahash;
     return true;
 };
 

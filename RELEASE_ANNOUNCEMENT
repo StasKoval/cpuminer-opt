@@ -3,29 +3,49 @@
 
 All users are encouraged to upgrade.
 
-New in v3.1.9
+New in 3.1.10
 
-   - added decred (blake256r14)
-   - myr-gr optimized for AES_NI, marginal increase in hashrate
-   - groestl, keccak & blakecoin fixed.
-   - x11gost is added as an alias for sib
+   - HOdl algo added with support for CPUs with or without AES_NI
+     such as the core2 and many AMD CPUs.
+     HOdl is a new CPU advantaged algo. at this time there is no GPU
+     miner available.
+     This implementation merges hodlminer and hodlminer-wolf with
+     cpuminer-opt. 
+     Compiling requires some additional libraries not included in the
+     default instalation of most Linux distributions: libboost-dev,
+     libboost-system-dev, libboost-thread-dev. 
 
-Other recently added or improved algos
+     Errata: The miner reports an inflated hashrate when mining hodl.
+             The actual hashrate is around .6 the reported rate, but
+             this is just an approximation. It is expected this implentation
+             performs to the same level as their ancestors as I have
+             made no changes to the code. The issue will be addressed in
+             a future release.
 
+   - pluck and drop added, benchmark only
+   - minor bug fixes, code cleanup and reduction in compiler warnings
+
+Recently added algos:
+
+  - decred (blake256r14)
+  - vanilla (blake256r8vnl)
   - x14 added with AES_NI and SSE2 optimisations
-  - blake added
-  - blake2s added
-  - vanilla (blake256r8vnl) added
-  - sib algo optimised:
+  - blake
+  - blake2s
+
+Recently improved algos:
+
+  - sib optimised:
       +116% AES_NI + SSE2
        +63% SSE2
-  - nist5 algo SSE optimised, in addition to previous AES_NI optimizations
+  - nist5 optimised tor AES_NI & SSE2
       +111% AES_NI + SSE2
        +68% SSE2
-  - c11 algo +57% optimized for AES_NI & SSE2
-  - zr5 algo optimized for AES_NI and SSE2
+  - c11 +57% optimized for AES_NI & SSE2
+  - zr5 optimized for AES_NI and SSE2
        +98% AES_NI + SSE2
        +45% SSE2
+  - myr-gr optimized for AES_NI, marginal increase in hashrate
 
 Starting in release 3.1 a CPU with a minimum of SSE2 is required.
 This includes core2 and newer CPUs. Some algos also require AES_NI,
@@ -56,15 +76,15 @@ sib             540      404          0.73
 c11             733      475          0.99
 myr-gr         1572     1560          2.12
 cryptonight     290 H    (3)          0.00039
-neoscrypt       (4)       32 K        0.043
+neoscrypt       (4)       32          0.043
 lyra2re         (4)      930          1.25
 lyra2rev2       (4)      495          0.65
 blake           (4)     22.4 M       30.4
-blake2s         (4)     17.5 M       23.6
-vanilla         (4)       33 M       44.6
-decred          (4)     22.6 M       30.5 
+blake2s         (4)     17.5         23.6
+vanilla         (4)     33.0         44.6
+decred          (4)     22.6         30.5 
 pentablake      (4)     3960 K        5.35
-keccak          (4)     7790 K       10.5
+keccak          (4)     7790         10.5
 axiom           (4)       72 H        0.098
 groestl         (4)      931          1.26 
 skein           (4)     5747          7.77
@@ -72,6 +92,9 @@ skein2          (4)     8675         11.7
 blakecoin(2)    (4)     33.9 M       45.8
 fresh(2)        (4)      528 K        0.71
 cryptolight(2)  (4)      685 H        0.00093
+pluck(2)        (4)     1925          0.0026
+drop(2)         (4)      934 K        1.26
+hodl(6)         440      400 H        0.00054
 
 Footnotes:
 (1) SSE2 rates are simulated in software.

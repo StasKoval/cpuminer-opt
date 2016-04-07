@@ -1,0 +1,5 @@
+need to install boost libraries
+ libboost-dev
+ libboost-system-dev
+ libboost-thread-dev
+

@@ -18,9 +18,9 @@ dist_man_MANS	= cpuminer.1
 cpuminer_SOURCES = \
   cpu-miner.c \
   util.c \
+  uint256.cpp \
   api.c \
   sysinfos.c \
-  uint256.cpp \
   algo-gate-api.c\
   algo/groestl/sph_groestl.c \
   algo/skein/sph_skein.c \
@@ -75,6 +75,17 @@ cpuminer_SOURCES = \
   algo/groestl/aes_ni/hash-groestl.c \
   algo/haval/haval.c\
   algo/heavy/heavy.c \
+  algo/hodl/hodl.cpp \
+  algo/hodl/hodl-gate.c \
+  algo/hodl/hodl_arith_uint256.cpp \
+  algo/hodl/hodl_uint256.cpp \
+  algo/hodl/hash.cpp \
+  algo/hodl/hmac_sha512.cpp \
+  algo/hodl/sha256.cpp \
+  algo/hodl/sha512.cpp \
+  algo/hodl/utilstrencodings.cpp \
+  algo/hodl/hodl-wolf.c \
+  algo/hodl/aes.c \
   algo/luffa/luffa.c \
   algo/luffa/sse2/luffa_for_sse2.c \
   algo/lyra2/lyra2.c \
@@ -133,7 +144,7 @@ if HAVE_WINDOWS
 endif
 
 cpuminer_LDFLAGS	= @LDFLAGS@
-cpuminer_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+cpuminer_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -lssl -lcrypto -lboost_thread -lboost_system
 cpuminer_CPPFLAGS = @LIBCURL_CPPFLAGS@ $(ALL_INCLUDES)
 cpuminer_CFLAGS   = -Wno-pointer-sign -Wno-pointer-to-int-cast $(disable_flags)
 

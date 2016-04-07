@@ -108,11 +108,8 @@ unsigned char heavy_gen_merkle_root ( char* merkle_root, stratum_cts* ctx )
 bool register_heavy_algo( algo_gate_t* gate )
 {
 //  gate->init_ctx = &init_heavy_ctx;
-    gate->scanhash = &scanhash_heavy;
-    gate->hash     = &heavyhash;
-//    gate->gen_merkel_root = &heavy_gen_merkle_root;
-//  gate->get_max64 = &heavy_get_max64;
-//  gate->custom_opt = &axiom_opt
+    gate->scanhash = (void*)&scanhash_heavy;
+    gate->hash     = (void*)&heavyhash;
     return true;
 };
 

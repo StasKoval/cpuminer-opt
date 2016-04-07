@@ -15,7 +15,7 @@
 //
 //
 // 
-//    So you want o add an algo. Well it is a little easier now.
+//    So you want to add an algo. Well it is a little easier now.
 //    Look at existing algos for guidance.
 //
 //    1. Define the algo, miner.h, previously in cpu-miner.c
@@ -95,22 +95,30 @@ void   *( *display_pok )     ( struct work*, uint64_t* );
 void   *( *wait_for_diff )   ( struct stratum_ctx* );
 double *( *get_max64 )       ();
 void   *( *set_target)       ( struct work*, double );
-bool   *( *get_scratchbuf )  ( char**, double );
+bool   *( *get_scratchbuf )  ( unsigned char** );
+//deprecated
 bool   *( *use_rpc2 )        ();
-void   *( *set_data_size )   ( uint32_t*, uint32_t* );
+void   *( *set_data_size )   ( uint32_t*, uint32_t*, struct work* );
 int    *( *set_data_and_target_size )   ( int*, int*, int*, int*, bool* );
-void   *( *gen_merkle_root)  ( char*, struct stratum_ctx*, int*,
+void   *( *gen_merkle_root        )  ( char*, struct stratum_ctx*, int*,
                                                       uint32_t*, int );
-void   *( *reverse_endian )    ( struct work* );
+void   *( *build_stratum_request )  ( char*, struct work*, unsigned char*,
+                                       char*, char* ); 
+void   *( *reverse_endian )          ( struct work* );
 // reverse_endian_34_35 for decred 
-void   *( *reverse_endian_17_19 ) ( uint32_t*, uint32_t*, struct work* );
-void   *( *calc_network_diff ) ( struct work* );
+void   *( *reverse_endian_17_19 )    ( uint32_t*, uint32_t*, struct work* );
+void   *( *calc_network_diff )       ( struct work* );
 unsigned char*  *( *get_xnonce2str ) ( struct work*, size_t );
 void   *( *set_benchmark_work_data ) ( struct work* );
-void   *( *build_extraheader ) ( struct work*, struct stratum_ctx*, uint32_t*,
-                                 int );
-bool   *( *prevent_dupes )    ( uint32_t*, struct work*, struct stratum_ctx*,
-                                int );
+void   *( *build_extraheader )       ( struct work*, struct stratum_ctx*,
+                                       uint32_t*, int );
+bool   *( *prevent_dupes )           ( uint32_t*, struct work*,
+                                       struct stratum_ctx*, int );
+void   *( *thread_barrier_init )    ();
+void   *( *thread_barrier_wait )    ();
+void   *( *copy_workdata )           ( struct work*, struct work*, uint32_t**,
+                                       int, int, int, int );
+void   ( *get_pseudo_random_data )  ( struct work*, char*, int );
 } algo_gate_t;
 
 // Declare null instances
@@ -138,6 +146,8 @@ bool    null_use_rpc2   ();
 void    null_set_data_size ( uint32_t* data_size, uint32_t* adata_sz );
 void    null_set_data_and_target_size ( int *data_size, int *target_size,
                     int *adata_sz,  int *atarget_sz, bool* allow_mininginfo );
+void    null_build_stratum_request( char* req, struct work* work,
+               unsigned char *xnonce2str, char* ntimestr, char* noncestr );
 void    null_reverse_endian( struct work* work );
 void    null_reverse_endian_17_19( uint32_t* ntime , uint32_t* nonce,
                                     struct work* work );
@@ -148,10 +158,20 @@ void    null_build_extraheader( struct work* work, struct stratum_ctx* sctx,
                                  uint32_t* extraheader, int headersize );
 bool    null_prevent_dupes( uint32_t* nonceptr, struct work* work, 
                             struct stratum_ctx* stratum, int thr_id );
+void    null_thread_barrier_init ();
+void    null_thread_barrier_wait ();
+void    null_copy_workdata ( struct work* work, struct work* g_work,
+          uint32_t **nonceptr, int wkcmp_offset, int wkcmp_sz, int nonce_oft,
+          int thr_id );
+void    null_get_pseudo_random_data ( struct work*, char* scratchbuf,
+                                       int thr_id );
+char* null_get_nonce2str ( struct work* work );
+
 
 bool register_algo( algo_gate_t *gate );
 
 // use this to call the hash function of an algo directly
 void exec_hash_function( int algo, void *output, const void *pdata );
 
-char* null_get_nonce2str ( struct work* work );
+void get_algo_alias( char** algo_or_alias );
+
