@@ -53,6 +53,12 @@ cpuminer_SOURCES = \
   crypto/c_skein.c \
   crypto/hash.c \
   crypto/aesb.c \
+  algo/argon2/argon2a.c \
+  algo/argon2/ar2/argon2.c \
+  algo/argon2/ar2/opt.c \
+  algo/argon2/ar2/cores.c \
+  algo/argon2/ar2/ar2-scrypt-jane.c \
+  algo/argon2/ar2/blake2b.c \
   algo/axiom.c \
   algo/blake/blake.c \
   algo/blake/blake2.c \
@@ -75,6 +81,7 @@ cpuminer_SOURCES = \
   algo/groestl/aes_ni/hash-groestl.c \
   algo/haval/haval.c\
   algo/heavy/heavy.c \
+  algo/heavy/bastion.c \
   algo/hodl/hodl.cpp \
   algo/hodl/hodl-gate.c \
   algo/hodl/hodl_arith_uint256.cpp \
@@ -100,6 +107,7 @@ cpuminer_SOURCES = \
   algo/nist5.c \
   algo/pluck.c \
   algo/scrypt.c \
+  algo/scrypt-jane.c \
   algo/sha2.c \
   algo/sibcoin.c \
   algo/simd/sse2/nist.c \

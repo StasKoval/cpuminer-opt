@@ -34,7 +34,6 @@ int scanhash_yescrypt(int thr_id, struct work *work, uint32_t max_nonce, uint64_
 			work_set_target_ratio( work, vhash );
 			*hashes_done = n - first_nonce + 1;
 			pdata[19] = n;
-printf("ret 1 scanhash_yescrypt\n");   
 			return true;
 		}
 		n++;
@@ -42,7 +41,6 @@ printf("ret 1 scanhash_yescrypt\n");
 
 	*hashes_done = n - first_nonce + 1;
 	pdata[19] = n;
-printf("ret 0 scanhash_yescrypt\n");          
 
 	return 0;
 }

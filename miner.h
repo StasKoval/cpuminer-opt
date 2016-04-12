@@ -423,13 +423,9 @@ struct workio_cmd {
 };
 
 enum algos {
-        ALGO_SCRYPT,     
-        ALGO_SHA256D,     
-        ALGO_KECCAK,      
-        ALGO_HEAVY,       
-        ALGO_NEOSCRYPT,   
-        ALGO_QUARK,       
+        ALGO_ARGON2,
         ALGO_AXIOM,       
+        ALGO_BASTION,
         ALGO_BLAKE,       
         ALGO_BLAKECOIN,   
         ALGO_BLAKE2S,     
@@ -441,22 +437,29 @@ enum algos {
         ALGO_DROP,        
         ALGO_FRESH,       
         ALGO_GROESTL,     
+        ALGO_HEAVY,
         ALGO_HODL,
+        ALGO_KECCAK,
         ALGO_LUFFA,       
         ALGO_LYRA2RE,       
         ALGO_LYRA2REV2,   
         ALGO_MYR_GR,      
+        ALGO_NEOSCRYPT,
         ALGO_NIST5,       
         ALGO_PENTABLAKE,  
         ALGO_PLUCK,       
+        ALGO_QUARK,
         ALGO_QUBIT,       
+        ALGO_SCRYPT,
+        ALGO_SCRYPTJANE,
+        ALGO_SHA256D,
         ALGO_SHAVITE3,    
-        ALGO_SIB,         
         ALGO_SKEIN,       
         ALGO_SKEIN2,      
         ALGO_S3,          
         ALGO_VANILLA,
         ALGO_X11,         
+        ALGO_X11GOST,
         ALGO_X13,         
         ALGO_X14,        
         ALGO_X15,       
@@ -466,13 +469,9 @@ enum algos {
         ALGO_COUNT
 };
 static const char *algo_names[] = {
-        "scrypt",
-        "sha256d",
-        "keccak",
-        "heavy",
-        "neoscrypt",
-        "quark",
+        "argon2",
         "axiom",
+        "bastion",
         "blake",
         "blakecoin",
         "blake2s",
@@ -484,22 +483,29 @@ static const char *algo_names[] = {
         "drop",
         "fresh",
         "groestl",
+        "heavy",
         "hodl",
+        "keccak",
         "luffa",
         "lyra2re",
         "lyra2rev2",
         "myr-gr",
+        "neoscrypt",
         "nist5",
         "pentablake",
         "pluck",
+        "quark",
         "qubit",
+        "scrypt",
+        "scryptjane",
+        "sha256d",
         "shavite3",
-        "x11gost",
         "skein",
         "skein2",
         "s3",
         "vanilla",
         "x11",
+        "x11gost",
         "x13",
         "x14",
         "x15",
@@ -559,10 +565,9 @@ static char const usage[] = "\
 Usage: " PACKAGE_NAME " [OPTIONS]\n\
 Options:\n\
   -a, --algo=ALGO       specify the algorithm to use\n\
-                          scrypt       scrypt(1024, 1, 1) (default)\n\
-                          scrypt:N     scrypt(N, 1, 1)\n\
-                          sha256d      SHA-256d\n\
+                          argon2\n\
                           axiom        Shabal-256 MemoHash\n\
+                          bastion\n\
                           blake        Blake-256 (SFR)\n\
                           blakecoin    blake256r8\n\
                           blake2s      Blake-2 S\n\
@@ -587,19 +592,23 @@ Options:\n\
                           pentablake   Pentablake\n\
                           quark        Quark\n\
                           qubit        Qubit\n\
+                          scrypt       scrypt(1024, 1, 1) (default)\n\
+                          scryptjane\n\
+                          scrypt:N     scrypt(N, 1, 1)\n\
+                          sha256d      SHA-256d\n\
                           shavite3     Shavite3\n\
-                          x11gost      sib (SibCoin)\n\
                           skein        Skein+Sha (Skeincoin)\n\
                           skein2       Double Skein (Woodcoin)\n\
                           s3           S3\n\
-                          vanilla      blake256r8vnl\n\
+                          vanilla      blake256r8vnl (VCash)\n\
                           x11          X11\n\
+                          x11gost      sib (SibCoin)\n\
                           x13          X13\n\
                           x14          X14\n\
                           x15          X15\n\
                           x17\n\
                           yescrypt\n\
-                          zr5          ZR5\n\
+                          zr5          Ziftr\n\
   -o, --url=URL         URL of mining server\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
   -u, --user=USERNAME   username for mining server\n\

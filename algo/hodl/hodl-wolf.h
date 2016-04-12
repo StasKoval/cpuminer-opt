@@ -20,7 +20,8 @@ typedef union _CacheEntry
 } CacheEntry;
 
 int scanhash_hodl_wolf( int thr_id, struct work* work, uint32_t max_nonce,
-                   unsigned long *hashes_done, CacheEntry *scratchpad );
+                   uint32_t *hashes_done, CacheEntry *scratchpad );
+//                   unsigned long *hashes_done, CacheEntry *scratchpad );
 
 void GenRandomGarbage( CacheEntry *Garbage, uint32_t *pdata, int thr_id);
 

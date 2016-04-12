@@ -26,7 +26,8 @@ void Rev256(uint32_t *Dest, const uint32_t *Src)
 }
 
 int scanhash_hodl_wolf( int threadNumber, struct work* work, uint32_t max_nonce,
-                   unsigned long *hashes_done, CacheEntry *Garbage )
+                   uint32_t *hashes_done, CacheEntry *Garbage )
+//                   unsigned long *hashes_done, CacheEntry *Garbage )
 {
     uint32_t *pdata = work->data;
     uint32_t *ptarget = work->target;
@@ -93,6 +94,7 @@ int scanhash_hodl_wolf( int threadNumber, struct work* work, uint32_t max_nonce,
 	}
 	
     *hashes_done = CollisionCount;
+
     return(0);
 }
 

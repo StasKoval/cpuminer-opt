@@ -137,6 +137,8 @@ uint32_t zr5_pok = 0;
 uint32_t accepted_count = 0L;
 uint32_t rejected_count = 0L;
 double *thr_hashrates;
+double *thr_hashcount;
+double global_hashcount = 0;
 double global_hashrate = 0;
 double stratum_diff = 0.;
 double net_diff = 0.;
@@ -327,6 +329,7 @@ static bool work_decode(const json_t *val, struct work *work)
 	// for api stats, on longpoll pools
 	stratum_diff = work->targetdiff;
         algo_gate.display_pok( work, &net_blocks );
+
 	return true;
 }
 
@@ -673,7 +676,7 @@ out:
 	return rc;
 }
 
-void scale_hashrate_for_display ( double* hashrate, char* units )
+void scale_hash_for_display ( double* hashrate, char* units )
 {
 // As should be obvious by the addressing mode of hashrate arg it gets
 // modified. Better to use a copy to preserve the original.
@@ -693,29 +696,41 @@ void scale_hashrate_for_display ( double* hashrate, char* units )
        *units = 'M';
        *hashrate /= 1e6;
      }
-     else
+     else if ( *hashrate < 1e13 )
      {
-       // 10 Gh/s and higher
+       // 10 iGh/s to 9999 Gh/s
        *units = 'G';
        *hashrate /= 1e9;
      }
+     else
+     {
+       // 10 Th/s and higher
+       *units = 'T';
+       *hashrate /= 1e12;
+     }
 }
-
 
 static int share_result(int result, struct work *work, const char *reason)
 {
-   char s[345];
+   char s1[345];
+   char s2[345];
    const char *sres;
+   double hashcount = 0.;
    double hashrate = 0.;
-   char units = 0;
+   char units1 = 0;
+   char units2 = 0;
    int i;
 
    pthread_mutex_lock(&stats_lock);
    for (i = 0; i < opt_n_threads; i++)
+   {
+       hashcount += thr_hashcount[i];
        hashrate += thr_hashrates[i];
+   }
 
    result ? accepted_count++ : rejected_count++;
    pthread_mutex_unlock(&stats_lock);
+   global_hashcount = hashcount;
    global_hashrate = hashrate;
 
    if (use_colors)
@@ -723,12 +738,18 @@ static int share_result(int result, struct work *work, const char *reason)
    else
 	sres = (result ? "(yes!!!)" : "(nooooo)");
 
-   scale_hashrate_for_display ( &hashrate, &units );
-   sprintf(s, "%.2f", hashrate );
-   applog(LOG_NOTICE, "accepted: %lu/%lu (%.0f%%), %s %cH/s %s",
-                 accepted_count, accepted_count + rejected_count,
-                 100. * accepted_count / (accepted_count + rejected_count),
-                  s, units, sres);
+   scale_hash_for_display ( &hashcount, &units1 );
+   scale_hash_for_display ( &hashrate, &units2 );
+   if ( units1 )
+      sprintf(s1, "%.2f", hashcount );
+   else
+      // no fractions of a hash
+      sprintf(s1, "%.0f", hashcount );
+   sprintf(s2, "%.2f", hashrate );
+   applog(LOG_NOTICE, "accepted: %lu/%lu (%.0f%%), %s %cH, %s %cH/s %s",
+              accepted_count, accepted_count + rejected_count,
+              100. * accepted_count / (accepted_count + rejected_count),
+              s1, units1, s2, units2, sres );
 
    if (reason)
    {
@@ -1304,9 +1325,7 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work, int th
    }
    else
    {
-//        if ( work->job_id )
-           free(work->job_id);
-
+        free(work->job_id);
 	work->job_id = strdup(sctx->job.job_id);
 	work->xnonce2_len = sctx->xnonce2_size;
 	work->xnonce2 = (uchar*) realloc(work->xnonce2, sctx->xnonce2_size);
@@ -1505,6 +1524,8 @@ static void *miner_thread(void *userdata)
 
    while (1)
    {
+// can all these var be defined ooutside the loop?
+// Some can be reinitialized if necessary.
        uint64_t hashes_done;
        struct timeval tv_start, tv_end, diff;
        int64_t max64;
@@ -1513,69 +1534,75 @@ static void *miner_thread(void *userdata)
        int wkcmp_sz = nonce_oft;
        int rc = 0;
 
-       algo_gate.thread_barrier_wait();
-
-       bool regen_work = algo_gate.ignore_pok( &wkcmp_sz, &wkcmp_offset, 
+       bool regen_work = algo_gate.ignore_pok( &wkcmp_sz, &wkcmp_offset,
                                                &nonce_oft );
 
-       if (jsonrpc_2) 
+       if (jsonrpc_2)
           wkcmp_sz = nonce_oft = 39;
 
        uint32_t *nonceptr = (uint32_t*) (((char*)work.data) + nonce_oft);
-// todo: hodl only does this for thread 0, 
-       if (have_stratum)
+
+       algo_gate.thread_barrier_wait();
+       if ( (thr_id == 0) || algo_gate.do_all_threads() )
        {
-            while (!jsonrpc_2 && time(NULL) >= g_work_time + 120)
+          if (have_stratum)
+          {
+              while (!jsonrpc_2 && time(NULL) >= g_work_time + 120)
                    sleep(1);
 
-           algo_gate.wait_for_diff( &stratum );
- 
-	   pthread_mutex_lock(&g_work_lock);
-
-           regen_work = regen_work || ( (*nonceptr) >= end_nonce
+              algo_gate.wait_for_diff( &stratum );
+ 	      pthread_mutex_lock(&g_work_lock);
+              regen_work = regen_work || ( (*nonceptr) >= end_nonce
 	          && !( memcmp( &work.data[wkcmp_offset],
                                 &g_work.data[wkcmp_offset], wkcmp_sz )
                   ||  jsonrpc_2 ? memcmp( ((uint8_t*) work.data) + 43,
                                           ((uint8_t*) g_work.data) + 43, 33 )
-                                : 0 ) );
-
-           if ( regen_work )
-		stratum_gen_work(&stratum, &g_work, thr_id );
-       }
-       else
-       {
-          int min_scantime = have_longpoll ? LP_SCANTIME : opt_scantime;
-	  /* obtain new work from internal workio thread */
-	  pthread_mutex_lock(&g_work_lock);
-	  if (!have_stratum
-             &&  ( time(NULL) - g_work_time >= min_scantime
-                 ||  work.data[19] >= end_nonce ) )
+                                       : 0 ) );
+              if ( regen_work )
+	         stratum_gen_work(&stratum, &g_work, thr_id );
+          }
+          else
           {
-	     if (unlikely(!get_work(mythr, &g_work)))
+             int min_scantime = have_longpoll ? LP_SCANTIME : opt_scantime;
+	     /* obtain new work from internal workio thread */
+	     pthread_mutex_lock(&g_work_lock);
+	     if (!have_stratum
+                &&  ( time(NULL) - g_work_time >= min_scantime
+                    ||  work.data[19] >= end_nonce ) )
              {
-		applog(LOG_ERR, "work retrieval failed, exiting "
+	        if (unlikely(!get_work(mythr, &g_work)))
+                {
+		   applog(LOG_ERR, "work retrieval failed, exiting "
 			"mining thread %d", mythr->id);
-		pthread_mutex_unlock(&g_work_lock);
-		goto out;
+                   pthread_mutex_unlock(&g_work_lock);
+		   goto out;
+	        }
+                g_work_time = have_stratum ? 0 : time(NULL);
 	     }
-             g_work_time = have_stratum ? 0 : time(NULL);
-	  }
-	  if (have_stratum)
-          {
+	     if (have_stratum)
+             {
 		pthread_mutex_unlock(&g_work_lock);
 		continue;
+             }
           }
-       }
 
+          // for hodl the nonce is in a different var. It is declared global
+          // in hodl-gate.c, set here, and carried forward to get_pseudo_ran...
+          // without ever getting referenced in this file.
 
-       // for hodl the nonce is in a different var. It is declared global
-       // in hodl-gate.c, set here, and carried forward to get_pseudo_ran...
-       // without ever getting referenced in this file.
-       algo_gate.copy_workdata( &work, &g_work, &nonceptr, wkcmp_offset,
-                                 wkcmp_sz, nonce_oft, thr_id );
-       pthread_mutex_unlock(&g_work_lock);
-       algo_gate.get_pseudo_random_data( &work, scratchbuf, thr_id );
+          algo_gate.init_nonceptr( &work, &g_work, &nonceptr, wkcmp_offset,
+                                               wkcmp_sz, nonce_oft,thr_id );
+          algo_gate.backup_work_data( &g_work );
+          pthread_mutex_unlock(&g_work_lock);
+
+       } // do all threads
+
+       algo_gate.thread_barrier_wait();
+       algo_gate.restore_work_data( &work );
+
+//try this here
        work_restart[thr_id].restart = 0;
+//       hashes_done = 0;
 
        if ( algo_gate.prevent_dupes( nonceptr, &work, &stratum, thr_id ) )
          continue;
@@ -1630,7 +1657,7 @@ static void *miner_thread(void *userdata)
      }
 
      /* max64 */
-
+// how does this apply to hodl? it doesn't sem to adjust max_nonce
      max64 *= thr_hashrates[thr_id];
      if ( max64 <= 0)
 	max64 = algo_gate.get_max64();
@@ -1640,13 +1667,18 @@ static void *miner_thread(void *userdata)
      else
          max_nonce = (*nonceptr) + (uint32_t) max64;
 
-     algo_gate.get_pseudo_random_data( &work, scratchbuf, thr_id );
+     if (firstwork_time == 0)
+        firstwork_time = time(NULL);
 
+//     work_restart[thr_id].restart = 0;
      hashes_done = 0;
      gettimeofday((struct timeval *) &tv_start, NULL);
 
-     if (firstwork_time == 0)
-	firstwork_time = time(NULL);
+     algo_gate.get_pseudo_random_data( &work, scratchbuf, thr_id );
+     algo_gate.thread_barrier_wait();
+
+//     if (firstwork_time == 0)
+//	firstwork_time = time(NULL);
 
      /** Scanhash **/
      if ( algo_gate.scanhash != null_scanhash ) 
@@ -1660,17 +1692,16 @@ static void *miner_thread(void *userdata)
      /* record scanhash elapsed time */
      gettimeofday(&tv_end, NULL);
      timeval_subtract(&diff, &tv_end, &tv_start);
-
      if (diff.tv_usec || diff.tv_sec)
      {
 	pthread_mutex_lock(&stats_lock);
+        thr_hashcount[thr_id] = hashes_done;
 	thr_hashrates[thr_id] =
 		hashes_done / (diff.tv_sec + diff.tv_usec * 1e-6);
 	pthread_mutex_unlock(&stats_lock);
      }
 
      /* if nonce found, submit work */
-
      if (rc && !opt_benchmark)
      {
        if ( !submit_work(mythr, &work) )
@@ -1689,42 +1720,61 @@ static void *miner_thread(void *userdata)
      }
 
      // display hashrate
-
      if (!opt_quiet)
      {
-        char s[16];
-        char units = ' ';
+        char s1[16];
+        char s2[16];
+        char units1 = ' ';
+        char units2 = ' ';
+        double hashcount = thr_hashcount[thr_id];
         double hashrate = thr_hashrates[thr_id];
-
-        scale_hashrate_for_display ( &hashrate, &units );
-        sprintf(s, "%.2f", hashrate );
-        applog( LOG_INFO, "CPU #%d: %s %cH/s", thr_id, s, units );
+        scale_hash_for_display( &hashcount, &units1 );
+        scale_hash_for_display( &hashrate, &units2 );
+        if ( units1 )
+           sprintf(s1, "%.2f", hashcount );
+       else
+           // no fractions of a hash
+           sprintf(s1, "%.0f", hashcount );
+        sprintf( s2, "%.2f", hashrate );
+        applog( LOG_INFO, "CPU #%d: %s %cH, %s %cH/s",
+                           thr_id, s1,units1, s2, units2 );
       }
 
       if (opt_benchmark && thr_id == opt_n_threads - 1)
       {
         double hashrate = 0.;
-        for (i = 0; i < opt_n_threads && thr_hashrates[i]; i++)
-          hashrate += thr_hashrates[i];
+        double hashcount = thr_hashcount[thr_id];
 
+        for (i = 0; i < opt_n_threads && thr_hashrates[i]; i++)
+        {
+          hashrate += thr_hashrates[i];
+          hashcount += thr_hashcount[i];
+        }
 	if (i == opt_n_threads)
         {
-           char s[16];
-           char units = ' ';
+           char s1[16];
+           char units1 = ' ';
+           char s2[16];
+           char units2 = ' ';
+           global_hashcount = hashcount;
            global_hashrate =  hashrate;
-
-           scale_hashrate_for_display( &hashrate, &units );
-           sprintf( s, "%.2f", hashrate );
-           applog( LOG_NOTICE, "Total: %s %cH/s", s, units );
-
+           if ( units1 )
+               sprintf(s1, "%.2f", hashcount );
+           else
+               // no fractions of a hash
+               sprintf(s1, "%.0f", hashcount );
+           scale_hash_for_display( &hashcount, &units1 );
+           scale_hash_for_display( &hashrate, &units2 );
+           sprintf( s1, "%.2f", hashcount );
+           sprintf( s2, "%.2f", hashrate );
+           applog( LOG_NOTICE, "Total: %s %cH, %s %cH/s",
+                                  s1, units1, s2, units2 );
          }
      }
-
-   }  // miner_thread process loop
+   }  // miner_thread loop
 
 out:
 	tq_freeze(mythr->q);
-
 	return NULL;
 }
 
@@ -1909,7 +1959,6 @@ static bool stratum_handle_response(char *buf)
 		share_result(valid, NULL, err_val ? json_string_value(err_val) : NULL);
 
 	} else {
-
 		if (!res_val || json_integer_value(id_val) < 4)
 			goto out;
 		valid = json_is_true(res_val);
@@ -2137,6 +2186,7 @@ void parse_arg(int key, char *arg )
 					continue;
 				opt_algo = (enum algos) i;
 				opt_scrypt_n = v;
+applog(LOG_WARNING,"opt_scrypt_n= %u",opt_scrypt_n);
 				break;
 			}
 		  }
@@ -2796,6 +2846,10 @@ int main(int argc, char *argv[]) {
 	thr_hashrates = (double *) calloc(opt_n_threads, sizeof(double));
 	if (!thr_hashrates)
 		return 1;
+
+        thr_hashcount = (double *) calloc(opt_n_threads, sizeof(double));
+        if (!thr_hashcount)
+                return 1;
 
 	/* init workio thread info */
 	work_thr_id = opt_n_threads;

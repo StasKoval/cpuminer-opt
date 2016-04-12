@@ -352,8 +352,8 @@ int scanhash_cryptolight(int thr_id, struct work *work,
 	return 0;
 }
 
-bool cryptolight_use_rpc2()
-{ return true; }
+//bool cryptolight_use_rpc2()
+//{ return true; }
 
 
 bool register_cryptolight_algo( algo_gate_t* gate )
@@ -362,7 +362,7 @@ bool register_cryptolight_algo( algo_gate_t* gate )
   gate->scanhash = (void*)&scanhash_cryptolight;
   gate->hash     = (void*)&cryptolight_hash;
   gate->hash_suw  = (void*)&cryptolight_hash;  // submit_upstream woek
-  gate->use_rpc2 = (void*)&cryptolight_use_rpc2;
+//  gate->use_rpc2 = (void*)&cryptolight_use_rpc2;
   jsonrpc_2 = true;
 //  opt_extranonce = false;
   return true;

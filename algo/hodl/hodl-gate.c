@@ -86,7 +86,7 @@ void hodl_thread_barrier_wait()
 static struct work hodl_work;
 uint32_t nNonce;
 
-void hodl_copy_workdata( struct work* work, struct work* g_work )
+void hodl_backup_work_data( struct work* g_work )
 {
   if ( memcmp( hodl_work.data, g_work->data, 76 ) )
   {
@@ -97,32 +97,36 @@ void hodl_copy_workdata( struct work* work, struct work* g_work )
    nNonce = ( clock() + rand() ) % 9999;
 }
 
-void hodl_get_pseudo_random_data( struct work* work, char* scratchbuf,
-                                  int thr_id )
+void hodl_restore_work_data( struct work* work )
 {
-//  nNonce = ( clock()+rand() ) % 9999;
-
-  hodl_thread_barrier_wait();
-
   if ( memcmp( work->data, hodl_work.data, 76 ) )
   {
      work_free( work );
      work_copy( work, &hodl_work );
   }
   work->data[19] = swab32(nNonce);
+}
+
+bool hodl_do_all_threads ()
+{
+  return false;
+}
+
+void hodl_get_pseudo_random_data( struct work* work, char* scratchbuf,
+                                  int thr_id )
+{
 #ifdef NO_AES_NI
   GetPsuedoRandomData( scratchbuf, work->data, thr_id );
 #else
   GenRandomGarbage( scratchbuf, work->data, thr_id );  
 #endif
-  hodl_thread_barrier_wait();
-//  pthread_barrier_wait( &bar );
 }
 
 bool register_hodl_algo ( algo_gate_t* gate )
 {
 #ifdef NO_AES_NI
   gate->scanhash               = (void*)&scanhash_hodl;
+  gate->set_data_size          = (void*)&hodl_set_data_size;
 #else
   gate->scanhash               = (void*)&scanhash_hodl_wolf;
 #endif
@@ -130,11 +134,14 @@ bool register_hodl_algo ( algo_gate_t* gate )
   gate->get_scratchbuf         = (void*)&hodl_get_scratchbuf;
   gate->reverse_endian_17_19   = (void*)&hodl_reverse_endian_17_19;
   gate->build_stratum_request  = (void*)&hodl_build_stratum_request;
-  gate->set_data_size          = (void*)&hodl_set_data_size;
+//  gate->set_data_size          = (void*)&hodl_set_data_size;
   gate->build_extraheader      = (void*)&hodl_build_extraheader;
   gate->thread_barrier_init    = (void*)&hodl_thread_barrier_init;
   gate->thread_barrier_wait    = (void*)&hodl_thread_barrier_wait;
-  gate->copy_workdata          = (void*)&hodl_copy_workdata;
+  gate->backup_work_data       = (void*)&hodl_backup_work_data;
+  gate->restore_work_data      = (void*)&hodl_restore_work_data;
+  gate->init_nonceptr          = (void*)&null_init_nonceptr;
+  gate->do_all_threads         = (void*)&hodl_do_all_threads;
   gate->get_pseudo_random_data = (void*)&hodl_get_pseudo_random_data;
   return true;
 }

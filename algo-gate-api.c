@@ -38,6 +38,12 @@
 // of aggo-gate, whether to have many smaller, unique gate functions or
 // fewer, larger functions with more code duplication.
 
+// A handy predefined generic null function that can be as any null gate
+// function with the samesignature. 
+
+void     null_gate_function()
+{}
+
 void     null_init_ctx()
 {};
 
@@ -95,10 +101,10 @@ bool null_ignore_pok( int* wkcmp_sz, int* wkcmp_offset, int* nonce_oft )
 void null_display_pok ( struct work* work, uint64_t* net_blocks )
 {}
 
-bool null_use_rpc2 ()
-{
-  return false; 
-}
+//bool null_use_rpc2 ()
+//{
+//  return false; 
+//}
 
 void null_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 { 
@@ -180,15 +186,26 @@ void null_thread_barrier_init()
 void null_thread_barrier_wait()
 {}
 
-void null_copy_workdata ( struct work* work, struct work* g_work,
+void null_backup_work_data ( struct work* g_work )
+{}
+
+void null_restore_work_data ( struct work* g_work )
+{}
+
+// In a reversal of logic the true null version oof init_nonceptr is used
+// by only one algo, so far. Every other algo uses the same standard
+// function. Both are defined here, the standard is the default initialised
+// below and the null is registered by algo hodl.
+
+void null_init_nonceptr( struct work* work, struct work* g_work, 
+                      uint32_t **nonceptr, int wkcmp_offset,
+                      int wkcmp_sz, int nonce_oft,int thr_id )
+{}
+
+void std_init_nonceptr ( struct work* work, struct work* g_work,
      uint32_t **nonceptr, int wkcmp_offset, int wkcmp_sz, int nonce_oft,
      int thr_id )
 {
-   // nonceptr s a clone of the parent. It doesn't get modified in
-   // this function, only the data it points to is modified.
-   // WRONG, it does get updated from new work.
-//  uint32_t *nonceptr = (uint32_t*)( ( (char*)work->data ) + nonce_oft );
-
    if ( memcmp( &work->data[wkcmp_offset], &g_work->data[wkcmp_offset],
                     wkcmp_sz )
           || jsonrpc_2 ? memcmp( ( (uint8_t*) work->data ) + 43,
@@ -205,11 +222,14 @@ void null_copy_workdata ( struct work* work, struct work* g_work,
        ++(*nonceptr[0]);
 }
 
+bool null_do_all_threads ()
+{
+   return true;
+}
+
 void null_get_pseudo_random_data ( struct work* work, char* scratchbuf,
                                       int thr_id )
 {}
-
-// initialise all functions to null
 
 void init_null_algo_gate( algo_gate_t* gate )
 {
@@ -226,7 +246,7 @@ void init_null_algo_gate( algo_gate_t* gate )
    gate->gen_merkle_root          = (void*)&null_gen_merkle_root;
    gate->build_stratum_request    = (void*)&null_build_stratum_request;
    gate->set_target               = (void*)&null_set_target;
-   gate->use_rpc2                 = (void*)&null_use_rpc2;
+//   gate->use_rpc2                 = (void*)&null_use_rpc2;
    gate->set_data_size            = (void*)&null_set_data_size;
    gate->set_data_and_target_size = (void*)&null_set_data_and_target_size;
    gate->reverse_endian           = (void*)&null_reverse_endian;
@@ -238,7 +258,10 @@ void init_null_algo_gate( algo_gate_t* gate )
    gate->prevent_dupes            = (void*)&null_prevent_dupes;
    gate->thread_barrier_init      = (void*)&null_thread_barrier_init;
    gate->thread_barrier_wait      = (void*)&null_thread_barrier_wait;
-   gate->copy_workdata            = (void*)&null_copy_workdata;
+   gate->backup_work_data         = (void*)&null_backup_work_data;
+   gate->restore_work_data        = (void*)&null_restore_work_data;
+   gate->init_nonceptr            = (void*)&std_init_nonceptr;
+   gate->do_all_threads           = (void*)&null_do_all_threads;
    gate->get_pseudo_random_data   = (void*)&null_get_pseudo_random_data;
 }
 
@@ -262,127 +285,53 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
 
    switch (algo)
    {
-     case ALGO_SCRYPT:
-        register_scrypt_algo( gate );
-        break;
-     case ALGO_SHA256D:
-        register_sha256d_algo( gate );
-        break;
-     case ALGO_KECCAK:
-        register_keccak_algo( gate );
-        break;
-     case ALGO_HEAVY:
-        register_heavy_algo( gate );
-        break;
-     case ALGO_AXIOM:
-        register_axiom_algo( gate );
-        break;
-     case ALGO_BLAKE:
-        register_blake_algo( gate );
-        break;
-     case ALGO_BLAKECOIN:
-        register_blakecoin_algo( gate );
-        break;
-     case ALGO_BLAKE2S:
-        register_blake2s_algo( gate );
-        break;
-     case ALGO_C11:
-        register_c11_algo( gate );
-        break;
-     case ALGO_CRYPTOLIGHT:
-        register_cryptolight_algo( gate );
-        break;
-     case ALGO_CRYPTONIGHT:
-        register_cryptonight_algo( gate );
-        break;
-     case ALGO_DECRED:
-        register_decred_algo( gate );
-        break;
-     case ALGO_DROP:
-        register_drop_algo( gate );
-        break;
-     case ALGO_FRESH:
-        register_fresh_algo( gate );
-        break;
-     case ALGO_GROESTL:
-        register_groestl_algo( gate );
-        break;
-     case ALGO_HODL:
-        register_hodl_algo( gate );
-        break;
-     case ALGO_LUFFA:
-        register_luffa_algo( gate );
-        break;
-     case ALGO_LYRA2RE:
-        register_lyra2re_algo( gate );
-        break;
-     case ALGO_LYRA2REV2:
-        register_lyra2rev2_algo( gate );
-        break;
-     case ALGO_MYR_GR:
-        register_myriad_algo( gate );
-        break;
-     case ALGO_NEOSCRYPT:
-        register_neoscrypt_algo( gate );
-        break;
-     case ALGO_NIST5:
-       	register_nist5_algo( gate );
-        break;
-     case ALGO_PENTABLAKE:
-        register_pentablake_algo( gate );
-        break;
-     case ALGO_PLUCK:
-        register_pluck_algo( gate );
-        break;
-     case ALGO_QUARK:
-        register_quark_algo( gate );
-        break;
-     case ALGO_QUBIT:
-        register_qubit_algo( gate );
-        break;
-     case ALGO_SHAVITE3:
-        register_shavite_algo( gate );
-        break;
-     case ALGO_SIB:
-        register_sib_algo( gate );
-        break;
-     case ALGO_SKEIN:
-        register_skein_algo( gate );
-        break;
-     case ALGO_SKEIN2:
-        register_skein2_algo( gate );
-        break;
-     case ALGO_S3:
-        register_s3_algo( gate );
-        break;
-     case ALGO_VANILLA:
-        register_vanilla_algo( gate );
-        break;
-     case ALGO_X11:
-        register_x11_algo( gate );
-        break;
-     case ALGO_X13:
-        register_x13_algo( gate );
-        break;
-     case ALGO_X14:
-        register_x14_algo( gate );
-        break;
-     case ALGO_X15:
-        register_x15_algo( gate );
-        break;
-     case ALGO_X17:
-        register_x17_algo( gate );
-        break;
-     case ALGO_YESCRYPT:
-        register_yescrypt_algo( gate );
-        break;
-     case ALGO_ZR5:
-        register_zr5_algo( gate );
-        break;
-     default:
+     case ALGO_ARGON2:      register_argon2_algo     ( gate ); break;
+     case ALGO_AXIOM:       register_axiom_algo      ( gate ); break;
+     case ALGO_BASTION:     register_bastion_algo    ( gate ); break;
+     case ALGO_BLAKE:       register_blake_algo      ( gate ); break;
+     case ALGO_BLAKECOIN:   register_blakecoin_algo  ( gate ); break;
+     case ALGO_BLAKE2S:     register_blake2s_algo    ( gate ); break;
+     case ALGO_C11:         register_c11_algo        ( gate ); break;
+     case ALGO_CRYPTOLIGHT: register_cryptolight_algo( gate ); break;
+     case ALGO_CRYPTONIGHT: register_cryptonight_algo( gate ); break;
+     case ALGO_DECRED:      register_decred_algo     ( gate ); break;
+     case ALGO_DROP:        register_drop_algo       ( gate ); break;
+     case ALGO_FRESH:       register_fresh_algo      ( gate ); break;
+     case ALGO_GROESTL:     register_groestl_algo    ( gate ); break;
+     case ALGO_HEAVY:       register_heavy_algo      ( gate ); break;
+     case ALGO_HODL:        register_hodl_algo       ( gate ); break;
+     case ALGO_KECCAK:      register_keccak_algo     ( gate ); break;
+     case ALGO_LUFFA:       register_luffa_algo      ( gate ); break;
+     case ALGO_LYRA2RE:     register_lyra2re_algo    ( gate ); break;
+     case ALGO_LYRA2REV2:   register_lyra2rev2_algo  ( gate ); break;
+     case ALGO_MYR_GR:      register_myriad_algo     ( gate ); break;
+     case ALGO_NEOSCRYPT:   register_neoscrypt_algo  ( gate ); break;
+     case ALGO_NIST5:       register_nist5_algo      ( gate ); break;
+     case ALGO_PENTABLAKE:  register_pentablake_algo ( gate ); break;
+     case ALGO_PLUCK:       register_pluck_algo      ( gate ); break;
+     case ALGO_QUARK:       register_quark_algo      ( gate ); break;
+     case ALGO_QUBIT:       register_qubit_algo      ( gate ); break;
+     case ALGO_SCRYPT:      register_scrypt_algo     ( gate ); break;
+     case ALGO_SCRYPTJANE:  register_scryptjane_algo ( gate ); break;
+     case ALGO_SHA256D:     register_sha256d_algo    ( gate ); break;
+     case ALGO_SHAVITE3:    register_shavite_algo    ( gate ); break;
+     case ALGO_SKEIN:       register_skein_algo      ( gate ); break;
+     case ALGO_SKEIN2:      register_skein2_algo     ( gate ); break;
+     case ALGO_S3:          register_s3_algo         ( gate ); break;
+     case ALGO_VANILLA:     register_vanilla_algo    ( gate ); break;
+     case ALGO_X11:         register_x11_algo        ( gate ); break;
+     case ALGO_X11GOST:     register_sib_algo        ( gate ); break;
+     case ALGO_X13:         register_x13_algo        ( gate ); break;
+     case ALGO_X14:         register_x14_algo        ( gate ); break;
+     case ALGO_X15:         register_x15_algo        ( gate ); break;
+     case ALGO_X17:         register_x17_algo        ( gate ); break;
+     case ALGO_YESCRYPT:    register_yescrypt_algo   ( gate ); break;
+     case ALGO_ZR5:         register_zr5_algo        ( gate ); break;
+
+    default:
         applog(LOG_ERR,"FAIL: algo_gate registration failed, unknown algo %s.\n", algo_names[opt_algo] );
-         return false;
-   }
+        return false;
+   } // switch
 
   // ensure required functions were defined.
   if (  gate->scanhash == null_scanhash )
@@ -429,11 +378,13 @@ const char* algo_alias_map[][2] =
   { "dmd-gr",            "groestl"     },
   { "droplp",            "drop"        },
   { "flax",              "c11"         },
+//  { "jane",              "scryptjane"  },  jane:16 doesn't work
   { "lyra2",             "lyra2re"     },
   { "lyra2v2",           "lyra2rev2"   },
   { "myriad",            "myr-gr"      },
   { "neo",               "neoscrypt"   },
   { "sib",               "x11gost"     },
+  { "yes",               "yescrypt"    },
   { "ziftr",             "zr5"         },
   { NULL,                NULL          }   
 };

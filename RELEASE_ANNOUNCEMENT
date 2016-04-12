@@ -1,41 +1,31 @@
-        Release 3.1.9 of cpuminer-opt is available for download.
+        Release 3.1.13 of cpuminer-opt is available for download.
 
 
 All users are encouraged to upgrade.
 
-New in 3.1.10
+New in 3.1.13
 
-   - HOdl algo added with support for CPUs with or without AES_NI
-     such as the core2 and many AMD CPUs.
-     HOdl is a new CPU advantaged algo. at this time there is no GPU
-     miner available.
-     This implementation merges hodlminer and hodlminer-wolf with
-     cpuminer-opt. 
-     Compiling requires some additional libraries not included in the
-     default instalation of most Linux distributions: libboost-dev,
-     libboost-system-dev, libboost-thread-dev. 
-
-     Errata: The miner reports an inflated hashrate when mining hodl.
-             The actual hashrate is around .6 the reported rate, but
-             this is just an approximation. It is expected this implentation
-             performs to the same level as their ancestors as I have
-             made no changes to the code. The issue will be addressed in
-             a future release.
-
-   - pluck and drop added, benchmark only
-   - minor bug fixes, code cleanup and reduction in compiler warnings
+   - added support for yescrypt, scryptjane, scrypt and sha256d, pool tested
+   - bastion algo added, benchmark tested only 
+   - suppress display of fractional hashes
 
 Recently added algos:
 
+  - hodl added with support for CPUs with and without AES_NI
+     Note: Compiling requires some additional libraries not included
+     in the default instalation of most Linux distributions: libboost-dev,
+     libboost-system-dev, libboost-thread-dev.
+  - argon2 added, 6% faster than encel version
   - decred (blake256r14)
   - vanilla (blake256r8vnl)
   - x14 added with AES_NI and SSE2 optimisations
   - blake
   - blake2s
+  - pluck and drop added, benchmark tested only
 
 Recently improved algos:
 
-  - sib optimised:
+  - x11gost (sib) optimised:
       +116% AES_NI + SSE2
        +63% SSE2
   - nist5 optimised tor AES_NI & SSE2
@@ -76,6 +66,7 @@ sib             540      404          0.73
 c11             733      475          0.99
 myr-gr         1572     1560          2.12
 cryptonight     290 H    (3)          0.00039
+hodl            275      200 H        0.00037
 neoscrypt       (4)       32          0.043
 lyra2re         (4)      930          1.25
 lyra2rev2       (4)      495          0.65
@@ -89,12 +80,16 @@ axiom           (4)       72 H        0.098
 groestl         (4)      931          1.26 
 skein           (4)     5747          7.77
 skein2          (4)     8675         11.7
+argon2          (4)     33.7 K        0.045
+yescrypt        (4)     3760 H        0.0051
+scryptjane      (4)      250          0.00034
+scrypt          (4)      113 K        0.153
+sha256d         (4)     62.5 M        0.084
 blakecoin(2)    (4)     33.9 M       45.8
 fresh(2)        (4)      528 K        0.71
 cryptolight(2)  (4)      685 H        0.00093
 pluck(2)        (4)     1925          0.0026
 drop(2)         (4)      934 K        1.26
-hodl(6)         440      400 H        0.00054
 
 Footnotes:
 (1) SSE2 rates are simulated in software.

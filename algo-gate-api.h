@@ -97,7 +97,7 @@ double *( *get_max64 )       ();
 void   *( *set_target)       ( struct work*, double );
 bool   *( *get_scratchbuf )  ( unsigned char** );
 //deprecated
-bool   *( *use_rpc2 )        ();
+//bool   *( *use_rpc2 )        ();
 void   *( *set_data_size )   ( uint32_t*, uint32_t*, struct work* );
 int    *( *set_data_and_target_size )   ( int*, int*, int*, int*, bool* );
 void   *( *gen_merkle_root        )  ( char*, struct stratum_ctx*, int*,
@@ -114,11 +114,14 @@ void   *( *build_extraheader )       ( struct work*, struct stratum_ctx*,
                                        uint32_t*, int );
 bool   *( *prevent_dupes )           ( uint32_t*, struct work*,
                                        struct stratum_ctx*, int );
-void   *( *thread_barrier_init )    ();
-void   *( *thread_barrier_wait )    ();
-void   *( *copy_workdata )           ( struct work*, struct work*, uint32_t**,
+void   *( *thread_barrier_init )     ();
+void   *( *thread_barrier_wait )     ();
+void   *( *backup_work_data )        ( struct work* );
+void   *( *restore_work_data )       ( struct work* );
+void   *( *init_nonceptr )           ( struct work*, struct work* ,uint32_t**,
                                        int, int, int, int );
-void   ( *get_pseudo_random_data )  ( struct work*, char*, int );
+bool   *( *do_all_threads )          ();
+void   *( *get_pseudo_random_data )  ( struct work*, char*, int );
 } algo_gate_t;
 
 // Declare null instances
@@ -142,7 +145,7 @@ void    null_display_pok ( struct work* work, uint64_t* net_blocks );
 double  null_get_max64  ();
 void    null_set_target ( struct work* work, double job_diff );
 bool    null_get_scratchbuf( char** scratchbuf );
-bool    null_use_rpc2   ();
+//bool    null_use_rpc2   ();
 void    null_set_data_size ( uint32_t* data_size, uint32_t* adata_sz );
 void    null_set_data_and_target_size ( int *data_size, int *target_size,
                     int *adata_sz,  int *atarget_sz, bool* allow_mininginfo );
@@ -160,14 +163,27 @@ bool    null_prevent_dupes( uint32_t* nonceptr, struct work* work,
                             struct stratum_ctx* stratum, int thr_id );
 void    null_thread_barrier_init ();
 void    null_thread_barrier_wait ();
-void    null_copy_workdata ( struct work* work, struct work* g_work,
-          uint32_t **nonceptr, int wkcmp_offset, int wkcmp_sz, int nonce_oft,
-          int thr_id );
+void    null_backup_work_data ();
+void    null_restore_work_data ();
+
+// In a reversal of logic the true null_init_nonce is used by only one
+// algo, so far. Every other algo uses the same standard function.
+// Both are defined here, the standard is the default initialised below
+// and the null is registered only by algo hodl.
+void    null_init_nonceptr( struct work* work, struct work* g_work, 
+                            uint32_t **nonceptr, int wkcmp_offset,
+                            int wkcmp_sz, int nonce_oft, int thr_id );
+void    std_init_nonceptr ( struct work* work, struct work* g_work,
+                            uint32_t **nonceptr, int wkcmp_offset,
+                            int wkcmp_sz, int nonce_oft, int thr_id );
+
+bool    null_do_all_threads ();
 void    null_get_pseudo_random_data ( struct work*, char* scratchbuf,
                                        int thr_id );
 char* null_get_nonce2str ( struct work* work );
 
-
+// The register functions for all the algos can be declqared here to reduce
+// compiler warnings but that's just more work for devs adding new algos.
 bool register_algo( algo_gate_t *gate );
 
 // use this to call the hash function of an algo directly

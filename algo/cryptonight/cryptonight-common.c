@@ -119,10 +119,10 @@ int64_t cryptonight_get_max64 ()
   return 0x40LL;
 }
 
-bool cryptonight_use_rpc2()
-{
- return true; 
-}
+//bool cryptonight_use_rpc2()
+//{
+// return true; 
+//}
 
 bool register_cryptonight_algo( algo_gate_t* gate )
 {
@@ -131,7 +131,7 @@ bool register_cryptonight_algo( algo_gate_t* gate )
   gate->hash      = (void*)&cryptonight_hash_aes;
   gate->hash_suw  = (void*)&cryptonight_hash_aes;  // submit_upstream_work
   gate->get_max64 = (void*)&cryptonight_get_max64;
-  gate->use_rpc2  = (void*)&cryptonight_use_rpc2;
+//  gate->use_rpc2  = (void*)&cryptonight_use_rpc2;
 
 // Does Wolf's AES cryptonight use rpc2? and does it need to disable extranonce?
   jsonrpc_2       = true;
