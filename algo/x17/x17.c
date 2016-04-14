@@ -419,6 +419,8 @@ int scanhash_x17(int thr_id, struct work *work,
 
 bool register_x17_algo( algo_gate_t* gate )
 {
+  gate->aes_ni_optimized = (void*)&return_true;
+  algo_not_tested();
   gate->init_ctx = (void*)&init_x17_ctx;
   gate->scanhash = (void*)&scanhash_x17;
   gate->hash     = (void*)&x17hash;

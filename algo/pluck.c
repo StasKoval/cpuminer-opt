@@ -499,6 +499,7 @@ bool get_pluck_scratchbuf( char** scratchbuf )
 
 bool register_pluck_algo( algo_gate_t* gate )
 {
+  algo_not_tested();
   gate->scanhash       = (void*)&scanhash_pluck;
   gate->hash           = (void*)&pluck_hash;
   gate->set_target     = (void*)&pluck_set_target;

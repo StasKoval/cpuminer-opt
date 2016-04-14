@@ -262,6 +262,7 @@ void drop_set_data_and_target_size( int *data_size, int *target_size,
 
 bool register_drop_algo( algo_gate_t* gate )
 {
+    algo_not_tested();
 //  gate->init_ctx = &init_drop_ctx;
     gate->scanhash             = (void*)&scanhash_drop;
     gate->hash                 = (void*)&droplp_hash_pok;

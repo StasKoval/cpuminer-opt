@@ -397,6 +397,7 @@ int scanhash_x15(int thr_id, struct work *work,
 
 bool register_x15_algo( algo_gate_t* gate )
 {
+  gate->aes_ni_optimized = (void*)&return_true;
   gate->init_ctx = (void*)&init_x15_ctx;
   gate->scanhash = (void*)&scanhash_x15;
   gate->hash     = (void*)&x15hash;

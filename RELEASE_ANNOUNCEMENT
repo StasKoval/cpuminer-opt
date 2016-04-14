@@ -1,27 +1,50 @@
-        Release 3.1.13 of cpuminer-opt is available for download.
+        Release 3.1.14 of cpuminer-opt is available for download.
 
 
 All users are encouraged to upgrade.
 
-New in 3.1.13
+New in 3.1.14
 
-   - added support for yescrypt, scryptjane, scrypt and sha256d, pool tested
-   - bastion algo added, benchmark tested only 
-   - suppress display of fractional hashes
+Algos
+  - cryptonight algo is now supported on CPUs without AES_NI.
+    All algos now support both CPU architectures.
+  - jane added as an alias for scryptjane with default N-factor 16
+
+Build enhancements, see details in README.md
+     - build.sh now works for CPUs with and without AES_NI
+     - it is no longer necessary to add -DNO_AES_NI CFLAG to
+       configure command when building for CPUs without AES_NI.
+
+UI enhancements
+     - enhanced capabilities check will now check CPU architecture
+       SW build and algo for AES_NI and SSE2 capabilities.
+     - a warning is displayed if mining an untested algo.
+
+Code cleanup
+     - removed a few more compiler warnings
+     - removed dead code
+
+Algo gate enhancements (for devs)
+     - replaced algo specific null gate functions with generic null 
+       functions
 
 Recently added algos:
 
   - hodl added with support for CPUs with and without AES_NI
      Note: Compiling requires some additional libraries not included
-     in the default instalation of most Linux distributions: libboost-dev,
-     libboost-system-dev, libboost-thread-dev.
+     in the default instalation of most Linux distributions:
+     libboost-dev, libboost-system-dev, libboost-thread-dev.
   - argon2 added, 6% faster than encel version
   - decred (blake256r14)
   - vanilla (blake256r8vnl)
   - x14 added with AES_NI and SSE2 optimisations
   - blake
   - blake2s
-  - pluck and drop added, benchmark tested only
+  - yescrypt
+  - scryptjane
+  - scrypt
+  - sha256d
+  - pluck, drop and bastion added, benchmark tested only
 
 Recently improved algos:
 
@@ -62,12 +85,12 @@ x15             333      270          0.45
 x17(2)          317      248          0.43
 nist5          2000     1592          3.37
 zr5             850      650          1.15    
-sib             540      404          0.73
+x11gost         540      404          0.73
 c11             733      475          0.99
 myr-gr         1572     1560          2.12
-cryptonight     290 H    (3)          0.00039
-hodl            275      200 H        0.00037
-neoscrypt       (4)       32          0.043
+cryptonight     290 H    165 H        0.00039
+hodl            275      200          0.00037
+neoscrypt       (4)       32 K        0.043
 lyra2re         (4)      930          1.25
 lyra2rev2       (4)      495          0.65
 blake           (4)     22.4 M       30.4

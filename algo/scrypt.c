@@ -791,6 +791,8 @@ bool register_scrypt_algo( algo_gate_t* gate )
   gate->set_target     = (void*)&scrypt_set_target;
   gate->get_scratchbuf = (void*)&get_scrypt_scratchbuf;
   gate->get_max64      = (void*)&scrypt_get_max64;
+  if ( opt_nfactor = 0 )
+    opt_nfactor = 6;
   return true;
 };
 

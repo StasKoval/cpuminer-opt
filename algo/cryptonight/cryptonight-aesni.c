@@ -100,21 +100,6 @@ typedef struct
     oaes_ctx* aes_ctx;
 } cryptonight_ctx;
 
-//typedef struct {
-//#ifndef NO_AES_NI
-//      cryptonight_ctx     cn;
-//     hashState_groestl  groestl;
-//#endif
-//} cn_context_holder;
-
-//cn_context_holder cn_ctx;
-
-//void init_cn_contexts()
-//{
-//          init_groestl( &cn_ctx.groestl );
-//          init_cryptonight( &cn_ctx.cn );
-//}
-
 void cryptonight_hash_aes( void *restrict output, const void *input, int len )
 {
 #ifndef NO_AES_NI

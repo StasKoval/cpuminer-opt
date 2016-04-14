@@ -71,7 +71,7 @@ cpuminer_SOURCES = \
   algo/cryptolight.c \
   algo/cryptonight/cryptonight-common.c\
   algo/cryptonight/cryptonight-aesni.c\
-  algo/cryptonight/cryptonight-lobotomized.c\
+  algo/cryptonight/cryptonight.c\
   algo/drop.c \
   algo/echo/aes_ni/hash.c\
   algo/fresh.c \
@@ -107,7 +107,7 @@ cpuminer_SOURCES = \
   algo/nist5.c \
   algo/pluck.c \
   algo/scrypt.c \
-  algo/scrypt-jane.c \
+  algo/scryptjane/scrypt-jane.c \
   algo/sha2.c \
   algo/sibcoin.c \
   algo/simd/sse2/nist.c \

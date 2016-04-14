@@ -378,6 +378,7 @@ int scanhash_x13(int thr_id, struct work *work, uint32_t max_nonce,
 
 bool register_x13_algo( algo_gate_t* gate )
 {
+  gate->aes_ni_optimized = (void*)&return_true;
   gate->init_ctx = (void*)&init_x13_ctx;
   gate->scanhash = (void*)&scanhash_x13;
   gate->hash     = (void*)&x13hash;

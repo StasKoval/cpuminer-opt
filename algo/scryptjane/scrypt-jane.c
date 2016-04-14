@@ -243,8 +243,8 @@ bool register_scryptjane_algo( algo_gate_t* gate )
     gate->hash_alt   = (void*)&scryptjanehash;
     gate->set_target = (void*)&scryptjane_set_target;
     gate->get_max64  = (void*)&scryptjane_get_max64;
-    if ( opt_scrypt_n == 0 )
-         opt_scrypt_n = 5;
+    if ( opt_nfactor == 0 )
+       opt_nfactor = 16;
     return true;
 }
 

@@ -158,6 +158,7 @@ int scanhash_nist5(int thr_id, struct work *work,
 
 bool register_nist5_algo( algo_gate_t* gate )
 {
+    gate->aes_ni_optimized = (void*)&return_true;
     gate->init_ctx = (void*)&init_nist5_ctx;
     gate->scanhash = (void*)&scanhash_nist5;
     gate->hash     = (void*)&nist5hash;

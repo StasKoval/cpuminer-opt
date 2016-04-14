@@ -38,7 +38,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h> /* for size_t */
 
-#define  __SSE4_1__
+//#define  __SSE4_1__
 
 void yescrypt_hash(const char* input, char* output, uint32_t len);
 

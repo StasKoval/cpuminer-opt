@@ -7,6 +7,7 @@
  */
 
 #include "hash-groestl.h"
+#include "miner.h"
 
 //#define AES_NI
 //#ifdef AES_NI

@@ -20,6 +20,7 @@
 #include <windows.h>
 #endif
 
+
 void do_blake_hash(const void* input, size_t len, char* output) {
     blake256_hash((uint8_t*)output, input, len);
 }
@@ -36,42 +37,14 @@ void do_skein_hash(const void* input, size_t len, char* output) {
     skein_hash(8 * 32, input, 8 * len, (uint8_t*)output);
 }
 
-void xor_blocks_dst(const uint8_t *restrict a, const uint8_t *restrict b, uint8_t *restrict dst) {
-    ((uint64_t*) dst)[0] = ((uint64_t*) a)[0] ^ ((uint64_t*) b)[0];
-    ((uint64_t*) dst)[1] = ((uint64_t*) a)[1] ^ ((uint64_t*) b)[1];
-}
-
 void (* const extra_hashes[4])( const void *, size_t, char *) =
     { do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash };
-
-//typedef struct {
-//     cryptonight_ctx     cn;
-//     hashState_groestl  groestl;
-//} cn_context_holder;
-
-//cn_context_holder cn_ctx;
-
-//void init_cn_contexts()
-//{
-//      init_groestl( &ctx.groestl );
-//          init_cryptonight( &ctx.cn );
-//}
-
-
-//void cryptonight_hash_ctx( void* output, const void* input, size_t len )
-//{
-// struct cryptonight_ctx *ctx =
-//          (struct cryptonight_ctx*)malloc(sizeof(struct cryptonight_ctx));
-//   cryptonight_hash_ctx(output, input, ctx);
-//   free(ctx);
-//}
 
 void cryptonight_hash( void *restrict output, const void *input, int len )
 {
 
 #ifdef NO_AES_NI
-  struct cryptonight_ctx ctx;
-  cryptonight_hash_ctx ( output, input, &ctx );
+  cryptonight_hash_ctx ( output, input, len );
 #else 
   cryptonight_hash_aes( output, input, len );
 #endif
@@ -80,8 +53,7 @@ void cryptonight_hash( void *restrict output, const void *input, int len )
 void cryptonight_hash_suw( void *restrict output, const void *input )
 {
 #ifdef NO_AES_NI
-  struct cryptonight_ctx ctx;
-  cryptonight_hash_ctx ( output, input, &ctx );
+  cryptonight_hash_ctx ( output, input, 76 );
 #else
   cryptonight_hash_aes( output, input, 76 );
 #endif
@@ -119,23 +91,14 @@ int64_t cryptonight_get_max64 ()
   return 0x40LL;
 }
 
-//bool cryptonight_use_rpc2()
-//{
-// return true; 
-//}
-
 bool register_cryptonight_algo( algo_gate_t* gate )
 {
-//  gate->init_ctx = &(void*)init_cryptonight_ctx;
+  gate->aes_ni_optimized = (void*)&return_true;
   gate->scanhash  = (void*)&scanhash_cryptonight;
-  gate->hash      = (void*)&cryptonight_hash_aes;
-  gate->hash_suw  = (void*)&cryptonight_hash_aes;  // submit_upstream_work
+  gate->hash      = (void*)&cryptonight_hash;
+  gate->hash_suw  = (void*)&cryptonight_hash_suw;  
   gate->get_max64 = (void*)&cryptonight_get_max64;
-//  gate->use_rpc2  = (void*)&cryptonight_use_rpc2;
-
-// Does Wolf's AES cryptonight use rpc2? and does it need to disable extranonce?
   jsonrpc_2       = true;
-//  opt_extranonce  = false;
   return true;
 };
 

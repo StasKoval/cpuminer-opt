@@ -41,25 +41,35 @@
 // A handy predefined generic null function that can be as any null gate
 // function with the samesignature. 
 
-void     null_gate_function()
-{}
+void do_nothing   () {}
+bool return_true  () { return true;  }
+bool return_false () { return false; }
+void *return_null () { return NULL;  }
 
-void     null_init_ctx()
-{};
+void algo_not_tested()
+{
+  applog(LOG_WARNING,"Algo %s has not been tested live. It may not work",algo_names[opt_algo]);
+  applog(LOG_WARNING,"and bad things may happen. Use at your own risk.");
+}
 
-int      null_scanhash(int thr_id, struct work* work,  uint32_t  max_nonce,
+void algo_not_implemented()
+{
+  applog(LOG_ERR,"Algo %s has not been Implemented.",algo_names[opt_algo]);
+}
+
+int null_scanhash(int thr_id, struct work* work,  uint32_t  max_nonce,
               uint64_t *hashes_done, unsigned char* scratchbuf )
 {
    applog(LOG_WARNING,"SWERR: undefined scanhash function in algo_gate");
    return false;
 }
 
-void     null_hash( void *output, const void *pdata, uint32_t len )
+void null_hash( void *output, const void *pdata, uint32_t len )
 {
    applog(LOG_WARNING,"SWERR: null_hash unsafe null function");
 };
 
-void     null_hash_suw( void *output, const void *pdata )
+void null_hash_suw( void *output, const void *pdata )
 {
   applog(LOG_WARNING,"SWERR: null_hash unsafe null function");
 };
@@ -72,11 +82,6 @@ double null_get_max64()
 void null_hash_alt   ( void *output, const void *pdata, uint32_t len )
 {
   applog(LOG_WARNING,"SWERR: null_hash_alt unsafe null function");
-};
-
-bool null_get_scratchbuf( char** scratchbuf )
-{
-  return true;
 };
 
 // This is the value for most, make it the default
@@ -92,31 +97,10 @@ void null_set_target( struct work* work, double job_diff )
    work_set_target( work, job_diff / opt_diff_factor );
 }
 
-// this functions also used to set the regen-work flag for decred
-bool null_ignore_pok( int* wkcmp_sz, int* wkcmp_offset, int* nonce_oft )
-{
-  return false;
-}
-
-void null_display_pok ( struct work* work, uint64_t* net_blocks )
-{}
-
-//bool null_use_rpc2 ()
-//{
-//  return false; 
-//}
-
 void null_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 { 
   *adata_sz = *data_size / sizeof(uint32_t);
 }
-
-void null_set_data_and_target_size( int *data_size, int *target_size,
-              int *adata_sz,  int *atarget_sz, bool* allow_mininginfo )
-{}
-
-void null_wait_for_diff( struct stratum_ctx* stratum ) 
-{}
 
 void null_build_stratum_request( char* req, struct work* work,
                unsigned char *xnonce2str, char* ntimestr, char* noncestr )
@@ -125,9 +109,6 @@ void null_build_stratum_request( char* req, struct work* work,
         "{\"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\":4}",
          rpc_user, work->job_id, xnonce2str, ntimestr, noncestr );
 }
-
-void null_reverse_endian ( struct work* work )
-{}
 
 void null_reverse_endian_17_19 (  uint32_t* ntime,  uint32_t* nonce,
                                   struct work* work )
@@ -173,35 +154,6 @@ void null_build_extraheader( struct work* work, struct stratum_ctx* sctx,
    work->data[31] = 0x00000280;
 }
 
-
-bool null_prevent_dupes( uint32_t* nonceptr, struct work* work,
-                         struct stratum_ctx* stratum, int thr_id )
-{
-  return false;
-}
-
-void null_thread_barrier_init()
-{}
-
-void null_thread_barrier_wait()
-{}
-
-void null_backup_work_data ( struct work* g_work )
-{}
-
-void null_restore_work_data ( struct work* g_work )
-{}
-
-// In a reversal of logic the true null version oof init_nonceptr is used
-// by only one algo, so far. Every other algo uses the same standard
-// function. Both are defined here, the standard is the default initialised
-// below and the null is registered by algo hodl.
-
-void null_init_nonceptr( struct work* work, struct work* g_work, 
-                      uint32_t **nonceptr, int wkcmp_offset,
-                      int wkcmp_sz, int nonce_oft,int thr_id )
-{}
-
 void std_init_nonceptr ( struct work* work, struct work* g_work,
      uint32_t **nonceptr, int wkcmp_offset, int wkcmp_sz, int nonce_oft,
      int thr_id )
@@ -222,55 +174,44 @@ void std_init_nonceptr ( struct work* work, struct work* g_work,
        ++(*nonceptr[0]);
 }
 
-bool null_do_all_threads ()
-{
-   return true;
-}
-
-void null_get_pseudo_random_data ( struct work* work, char* scratchbuf,
-                                      int thr_id )
-{}
-
 void init_null_algo_gate( algo_gate_t* gate )
 {
+   gate->aes_ni_optimized         = (void*)&return_false;
    gate->scanhash                 = (void*)&null_scanhash;
    gate->hash                     = (void*)&null_hash;
    gate->hash_alt                 = (void*)&null_hash_alt;
    gate->hash_suw                 = (void*)&null_hash_suw;
-   gate->init_ctx                 = (void*)&null_init_ctx;
-   gate->ignore_pok               = (void*)&null_ignore_pok;
-   gate->display_pok              = (void*)&null_display_pok;
-   gate->wait_for_diff            = (void*)&null_wait_for_diff;
+   gate->init_ctx                 = (void*)&do_nothing;
+   gate->ignore_pok               = (void*)&return_false;
+   gate->display_pok              = (void*)&do_nothing;
+   gate->wait_for_diff            = (void*)&do_nothing;
    gate->get_max64                = (void*)&null_get_max64;
-   gate->get_scratchbuf           = (void*)&null_get_scratchbuf;
+   gate->get_scratchbuf           = (void*)&return_true;
    gate->gen_merkle_root          = (void*)&null_gen_merkle_root;
    gate->build_stratum_request    = (void*)&null_build_stratum_request;
    gate->set_target               = (void*)&null_set_target;
-//   gate->use_rpc2                 = (void*)&null_use_rpc2;
    gate->set_data_size            = (void*)&null_set_data_size;
-   gate->set_data_and_target_size = (void*)&null_set_data_and_target_size;
-   gate->reverse_endian           = (void*)&null_reverse_endian;
+   gate->set_data_and_target_size = (void*)&do_nothing;
+   gate->reverse_endian           = (void*)&do_nothing;
    gate->reverse_endian_17_19     = (void*)&null_reverse_endian_17_19;
    gate->calc_network_diff        = (void*)&null_calc_network_diff;
    gate->get_xnonce2str           = (void*)&null_get_xnonce2str;
    gate->set_benchmark_work_data  = (void*)&null_set_benchmark_work_data;
    gate->build_extraheader        = (void*)&null_build_extraheader;
-   gate->prevent_dupes            = (void*)&null_prevent_dupes;
-   gate->thread_barrier_init      = (void*)&null_thread_barrier_init;
-   gate->thread_barrier_wait      = (void*)&null_thread_barrier_wait;
-   gate->backup_work_data         = (void*)&null_backup_work_data;
-   gate->restore_work_data        = (void*)&null_restore_work_data;
+   gate->prevent_dupes            = (void*)&return_false;
+   gate->thread_barrier_init      = (void*)&do_nothing;
+   gate->thread_barrier_wait      = (void*)&do_nothing;
+   gate->backup_work_data         = (void*)&do_nothing;
+   gate->restore_work_data        = (void*)&do_nothing;
    gate->init_nonceptr            = (void*)&std_init_nonceptr;
-   gate->do_all_threads           = (void*)&null_do_all_threads;
-   gate->get_pseudo_random_data   = (void*)&null_get_pseudo_random_data;
+   gate->do_all_threads           = (void*)&return_true;
+   gate->get_pseudo_random_data   = (void*)&do_nothing;
 }
 
 // called by each thread that uses the gate
 
 bool register_algo_gate( int algo, algo_gate_t *gate )
 {
-   bool rc = true;
-
    if ( NULL == gate )
    {
      applog(LOG_ERR,"FAIL: algo_gate registration failed, NULL gate\n");
@@ -334,7 +275,7 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
    } // switch
 
   // ensure required functions were defined.
-  if (  gate->scanhash == null_scanhash )
+  if (  gate->scanhash == (void*)&null_scanhash )
   {
     applog(LOG_ERR, "Fail: Required algo_gate functions undefined\n");
     return false;
@@ -378,7 +319,7 @@ const char* algo_alias_map[][2] =
   { "dmd-gr",            "groestl"     },
   { "droplp",            "drop"        },
   { "flax",              "c11"         },
-//  { "jane",              "scryptjane"  },  jane:16 doesn't work
+  { "jane",              "scryptjane"  }, 
   { "lyra2",             "lyra2re"     },
   { "lyra2v2",           "lyra2rev2"   },
   { "myriad",            "myr-gr"      },

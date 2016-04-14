@@ -243,6 +243,7 @@ void zr5_reverse_endian_17_19( uint32_t* ntime, uint32_t* nonce,
 
 bool register_zr5_algo( algo_gate_t* gate )
 {
+    gate->aes_ni_optimized = (void*)&return_true;
     gate->init_ctx      = (void*)&init_zr5_ctx;
     gate->scanhash      = (void*)&scanhash_zr5;
     gate->hash          = (void*)&zr5hash;

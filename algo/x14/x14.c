@@ -388,6 +388,7 @@ int64_t x14_get_max64 ()
 
 bool register_x14_algo( algo_gate_t* gate )
 {
+  gate->aes_ni_optimized = (void*)&return_true;
   gate->init_ctx  = (void*)&init_x14_ctx;
   gate->scanhash  = (void*)&scanhash_x14;
   gate->hash      = (void*)&x14hash;

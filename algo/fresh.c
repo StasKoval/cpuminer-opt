@@ -128,6 +128,7 @@ void fresh_set_target( struct work* work, double job_diff )
 
 bool register_fresh_algo( algo_gate_t* gate )
 {
+    algo_not_tested();
 //  gate->init_ctx = &init_fresh_ctx;
     gate->scanhash   = (void*)&scanhash_fresh;
     gate->hash       = (void*)&freshhash;

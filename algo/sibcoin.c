@@ -181,6 +181,7 @@ int scanhash_sib(int thr_id, struct work *work,
 
 bool register_sib_algo( algo_gate_t* gate )
 {
+    gate->aes_ni_optimized = (void*)&return_true;
     gate->scanhash = (void*)&scanhash_sib;
     gate->hash     = (void*)&sibhash;
     gate->hash_alt = (void*)&sibhash;

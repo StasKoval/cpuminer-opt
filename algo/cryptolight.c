@@ -358,13 +358,12 @@ int scanhash_cryptolight(int thr_id, struct work *work,
 
 bool register_cryptolight_algo( algo_gate_t* gate )
 {
+  algo_not_tested();
 //  gate->init_ctx = &init_cryptolight_ctx;
   gate->scanhash = (void*)&scanhash_cryptolight;
   gate->hash     = (void*)&cryptolight_hash;
   gate->hash_suw  = (void*)&cryptolight_hash;  // submit_upstream woek
-//  gate->use_rpc2 = (void*)&cryptolight_use_rpc2;
   jsonrpc_2 = true;
-//  opt_extranonce = false;
   return true;
 };
 

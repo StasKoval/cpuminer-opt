@@ -433,6 +433,7 @@ int64_t get_x11_max64 ()
 
 bool register_x11_algo( algo_gate_t* gate )
 {
+  gate->aes_ni_optimized = (void*)&return_true;
   gate->init_ctx  = (void*)&init_x11_ctx;
   gate->scanhash  = (void*)&scanhash_x11;
   gate->hash      = (void*)&x11_hash;
