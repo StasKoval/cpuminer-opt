@@ -290,6 +290,7 @@ void   work_set_target_ratio( struct work* work, uint32_t* hash );
 
 void   get_currentalgo( char* buf, int sz );
 bool   has_aes_ni( void );
+bool   has_sse2( void );
 void   bestcpu_feature( char *outbuf, int maxsz );
 void   processor_id ( int functionnumber, int output[4] );
 

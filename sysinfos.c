@@ -188,8 +188,8 @@ bool has_sse2()
     return false;
 #else
     int cpu_info[4] = { 0 };
-    cpuid(7, cpu_info);
-    return cpu_info[2] & SSE2_Flag;
+    cpuid(1, cpu_info);
+    return cpu_info[3] & SSE2_Flag;
 #endif
 }
 
