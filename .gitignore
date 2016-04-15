@@ -3,6 +3,11 @@ cpuminer
 *.exe
 *.o
 *.d
+*.new
+*.bak
+*.good
+*.orig
+*.del
 gmon.out
 
 autom4te.cache
@@ -49,3 +54,4 @@ sign/
 sign.sh
 
 compat/curl-for-windows/
+.dirstamp
