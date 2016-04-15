@@ -19,7 +19,7 @@ rm -f config.status
 extracflags="$extracflags -O3 -march=native -ftree-loop-if-convert-stores -DUSE_ASM"
 
 CFLAGS="$extracflags" \
-CXXFLAGS="$CFLAGS" \
+CXXFLAGS="$CFLAGS -std=gnu++11" \
 ./configure --with-crypto --with-curl
 
 make -j 4
