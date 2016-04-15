@@ -2628,10 +2628,7 @@ void check_cpu_capability ()
      int cpu_id[4];
      unsigned int nExIds;
      char CPUBrandString[0x40];
-     bool cpu_has_aes  = false,
-          sw_has_aes   = false,
-          cpu_has_sse2 = false,
-          algo_has_aes = algo_gate.aes_ni_optimized();
+     bool algo_has_aes = algo_gate.aes_ni_optimized();
      char* grn_yes;
      char* ylw_no;
      char* red;
@@ -2664,84 +2661,37 @@ void check_cpu_capability ()
           memcpy( CPUBrandString + 32, cpu_id, sizeof(cpu_id) );
      }
 
+     bool cpu_has_aes = has_aes_ni();
+     bool cpu_has_sse2 = has_sse2();
+     bool sw_has_aes = false;
+     bool sw_has_sse2 = false;
      #ifdef __AES__
-       cpu_has_aes = true;
-     #endif
-     #ifndef NO_AES_NI
-       sw_has_aes = true;
+     sw_has_aes = true;
      #endif
      #ifdef __SSE2__
-       cpu_has_sse2 = true;
+     sw_has_sse2 = true;
      #endif
 
-     printf("Checking CPU capatibility...\n");
-     printf( "        %s\n", CPUBrandString );
+     printf("Checking CPU capatibility of %s...\n", CPUBrandString);
 
-     printf("   CPU arch supports AES_NI...");
-     if ( cpu_has_aes )
-     {
-        printf("%s\n", grn_yes );
-        printf("   SW built with AES_NI.......");
-        if ( sw_has_aes )
-        {
-            printf("%s\n", grn_yes);
-            printf("   Algo supports AES_NI.......");
-            if ( algo_has_aes )
-            {
-               printf("%s\n", grn_yes);
-               printf("Start mining with AES_NI optimisations...\n\n");
-            }
-            else
-            {
-              printf("%s\n", ylw_no );
-              printf("Start mining without AES_NI optimisations...\n\n");
-            }
-         }
-         else
-         {
-            printf("%s\n", ylw_no );
-            printf("   CPU arch supports SSE2.....");
-            if ( cpu_has_sse2 )
-            {
-              printf("%s\n", grn_yes );
-              printf("Start mining without AES_NI optimisations...\n\n");
-            }
-            else
-            {
-              printf("%s\n", ylw_no );
-              printf("%sUnsupported CPU architecture, requires SSE2 minimum.%s\n", red, CL_N);
-              exit(1);
-            }
-         }
-      }
-      else
-      {
-         printf("%s\n", ylw_no );
-         // make sure CPU has at least SSE2
-         printf("   CPU arch supports SSE2.....");
-         if ( cpu_has_sse2 )
-         {
-            printf("%s\n", grn_yes );
-            printf("   SW built with SSE2.........");
-            if ( sw_has_aes )         
-            {         
-              printf("%s\n", ylw_no );
-              printf("%sIncompatible SW build, rebuild with NO_AES_NI%s\n", red, CL_N );
-              exit(1);
-            }
-            else
-            {
-              printf("%s\n", grn_yes );
-              printf("Start mining without AES_NI optimisations...\n\n");
-            }
-         }            
-         else            
-         {
-            printf("%s\n", ylw_no );
-            printf("%sUnsupported CPU architecture, requires SSE2 minimum.%s\n", red, CL_N );
-            exit(1);
-         }
-      }
+     printf("   CPU arch supports AES_NI... %s\n", cpu_has_aes ? grn_yes : ylw_no);
+     printf("   CPU arch supports SSE2..... %s\n", cpu_has_sse2 ? grn_yes : ylw_no);
+     printf("   SW built with AES_NI....... %s\n", sw_has_aes ? grn_yes : ylw_no);
+     printf("   SW built with SSE2......... %s\n", sw_has_sse2 ? grn_yes : ylw_no);
+     printf("   Algo supports AES_NI....... %s\n", algo_has_aes ? grn_yes : ylw_no);
+     if (sw_has_aes && !cpu_has_aes) {
+          printf("%sIncompatible SW build, rebuild with -march=native%s\n", red, CL_N );
+          exit(1);
+     }
+     if (sw_has_sse2 && !cpu_has_sse2) {
+          printf("%sIncompatible SW build, rebuild with -march=native%s\n", red, CL_N );
+          exit(1);
+     }
+     if (sw_has_aes && algo_has_aes) {
+          printf("Starting mining with AES_NI optimisations...\n\n");
+     } else {
+          printf("Starting mining without AES_NI optimisations...\n\n");
+     }
 }
 
 void get_defconfig_path(char *out, size_t bufsize, char *argv0);
