@@ -7,7 +7,6 @@
  * - implements NIST hash api
  * - assumes that message lenght is multiple of 8-bits
  * - _ECHO_VPERM_ must be defined if compiling with ../main.c
- * -  define NO_AES_NI for aes_ni version
  *
  * Cagdas Calik
  * ccalik@metu.edu.tr

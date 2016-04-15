@@ -1,3 +1,4 @@
+#include "miner.h"
 // specify assembly or intrinsics implementation
 //#define TASM
 #define TINTR

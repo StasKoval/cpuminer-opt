@@ -16,9 +16,11 @@ rm -f config.status
 # extracflags="-O3 -march=native -Wall -D_REENTRANT -funroll-loops -fvariable-expansion-in-unroller -fmerge-all-constants -fbranch-target-load-optimize2 -fsched2-use-superblocks -falign-loops=16 -falign-functions=16 -falign-jumps=16 -falign-labels=16"
 
 # Debian 7.7 / Ubuntu 14.04 (gcc 4.7+)
-#extracflags="$extracflags -Ofast -flto -fuse-linker-plugin -ftree-loop-if-convert-stores"
+extracflags="$extracflags -O3 -march=native -ftree-loop-if-convert-stores -DUSE_ASM"
 
-./configure --with-crypto --with-curl CFLAGS="-O3 -march=native -Wall"
+CFLAGS="$extracflags" \
+CXXFLAGS="$CFLAGS" \
+./configure --with-crypto --with-curl
 
 make -j 4
 

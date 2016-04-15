@@ -14,18 +14,18 @@
 #undef USE_ASM
 #endif
 
-#ifndef NO_AES_NI
- #ifndef __AES__
-  #define NO_AES_NI
- #endif
-#endif
-
 /* missing arch defines for msvc */
 #if defined(_M_X64)
 #define __i386__ 1
 #define __x86_64__ 1
 #elif defined(_M_X86)
 #define __i386__ 1
+#endif
+
+#else /* _MSC_VER */
+
+#ifndef __AES__
+#define NO_AES_NI
 #endif
 
 #endif /* _MSC_VER */
