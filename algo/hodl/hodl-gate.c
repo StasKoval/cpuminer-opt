@@ -34,12 +34,14 @@ bool hodl_get_scratchbuf( unsigned char** scratchbuf )
   return ( *scratchbuf != NULL );
 }
 
+/*
 void hodl_reverse_endian_17_19( uint32_t* ntime, uint32_t* nonce,
                                 struct work* work )
 {
     le32enc(ntime, work->data[17]);
     le32enc(nonce, work->data[19]);
 }
+*/
 
 char *hodl_build_stratum_request( char* req, struct work* work, 
        unsigned char *xnonce2str, char* ntimestr, char* noncestr  )
@@ -134,7 +136,7 @@ bool register_hodl_algo ( algo_gate_t* gate )
 #endif
   gate->set_target             = (void*)&hodl_set_target;
   gate->get_scratchbuf         = (void*)&hodl_get_scratchbuf;
-  gate->reverse_endian_17_19   = (void*)&hodl_reverse_endian_17_19;
+//  gate->reverse_endian_17_19   = (void*)&hodl_reverse_endian_17_19;
   gate->build_stratum_request  = (void*)&hodl_build_stratum_request;
 //  gate->set_data_size          = (void*)&hodl_set_data_size;
   gate->build_extraheader      = (void*)&hodl_build_extraheader;
@@ -143,8 +145,8 @@ bool register_hodl_algo ( algo_gate_t* gate )
   gate->backup_work_data       = (void*)&hodl_backup_work_data;
   gate->restore_work_data      = (void*)&hodl_restore_work_data;
   gate->init_nonceptr          = (void*)&do_nothing;
-  gate->do_all_threads         = (void*)&hodl_do_all_threads;
   gate->get_pseudo_random_data = (void*)&hodl_get_pseudo_random_data;
+  gate->do_all_threads         = (void*)&hodl_do_all_threads;
   return true;
 }
 

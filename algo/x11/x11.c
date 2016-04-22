@@ -428,8 +428,10 @@ int scanhash_x11(int thr_id, struct work *work,
         return 0;
 }
 
+/*
 int64_t get_x11_max64 ()
 { return 0x3ffffLL; }
+*/
 
 bool register_x11_algo( algo_gate_t* gate )
 {
@@ -437,7 +439,8 @@ bool register_x11_algo( algo_gate_t* gate )
   gate->init_ctx  = (void*)&init_x11_ctx;
   gate->scanhash  = (void*)&scanhash_x11;
   gate->hash      = (void*)&x11_hash;
-  gate->get_max64 = (void*)&get_x11_max64;
+//  gate->get_max64 = (void*)&get_x11_max64;
+  gate->get_max64 = (void*)&get_max64_0x3ffff;
   gate->hash_alt  = (void*)&x11hash_alt;
   return true;
 };

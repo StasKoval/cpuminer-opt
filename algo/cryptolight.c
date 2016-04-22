@@ -363,6 +363,7 @@ bool register_cryptolight_algo( algo_gate_t* gate )
   gate->scanhash = (void*)&scanhash_cryptolight;
   gate->hash     = (void*)&cryptolight_hash;
   gate->hash_suw  = (void*)&cryptolight_hash;  // submit_upstream woek
+  gate->get_max64 = (void*)&get_max64_0x40LL;
   jsonrpc_2 = true;
   return true;
 };

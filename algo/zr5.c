@@ -212,11 +212,13 @@ void zr5_display_pok ( struct work* work )
         applog(LOG_BLUE, "POK received: %08xx", work->data[0] );
 }
 
+/*
 void zr5_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 {
    *data_size = 80;
    *adata_sz = *data_size / sizeof(uint32_t);
 }
+*/
 
 void zr5_set_data_and_target_size( int *data_size, int *target_size,
                                    int *adata_sz,  int *atarget_sz )
@@ -234,12 +236,14 @@ void zr5_reverse_endian( struct work* work )
      work->data[i] = swab32( work->data[i] );
 }
 
+/*
 void zr5_reverse_endian_17_19( uint32_t* ntime, uint32_t* nonce,
                                 struct work* work )
 {
    be32enc( ntime, work->data[17] );
    be32enc( nonce, work->data[19] );
 }
+*/
 
 bool register_zr5_algo( algo_gate_t* gate )
 {
@@ -251,10 +255,11 @@ bool register_zr5_algo( algo_gate_t* gate )
     gate->get_max64     = (void*)&zr5_get_max64;
     gate->ignore_pok    = (void*)&zr5_ignore_pok;
     gate->display_pok   = (void*)&zr5_display_pok;
-    gate->set_data_size = (void*)&zr5_set_data_size;
+    gate->suw_build_hex_string = (void*)&suw_build_hex_string_80;
+//    gate->set_data_size = (void*)&set_data_size_80;
     gate->set_data_and_target_size = (void*)&zr5_set_data_and_target_size;
-    gate->reverse_endian       = (void*)&zr5_reverse_endian;
-    gate->reverse_endian_17_19 = (void*)&zr5_reverse_endian_17_19;
+    gate->set_work_data_endian = (void*)&swab_work_data;
+    gate->encode_endian_17_19  = (void*)&encode_big_endian_17_19;
     return true;
 };
 

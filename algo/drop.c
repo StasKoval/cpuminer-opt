@@ -224,12 +224,14 @@ bool drop_ignore_pok( int* wkcmp_sz, int* wkcmp_offset )
    return false;
 }
 
+/*
 void drop_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
 {
    *data_size = 80;
    *adata_sz = *data_size / sizeof(uint32_t);
 
 }
+*/
 
 void reverse_drop_endian( struct work* work )
 {
@@ -238,12 +240,14 @@ void reverse_drop_endian( struct work* work )
      work->data[i] = swab32( work->data[i] );
 }
 
+/*
 void reverse_drop_endian_17_19( uint32_t* ntime, uint32_t* nonce,
                                 struct work* work )
 {
    be32enc( ntime, work->data[17] );
    be32enc( nonce, work->data[19] );
 }
+*/
 
 void display_drop_pok ( struct work* work ) 
 {
@@ -268,11 +272,13 @@ bool register_drop_algo( algo_gate_t* gate )
     gate->hash                 = (void*)&droplp_hash_pok;
     gate->hash_alt             = (void*)&droplp_hash_pok;
     gate->hash_suw             = (void*)&droplp_hash_pok;
-    gate->set_target           = (void*)&drop_set_target;
+//    gate->set_target           = (void*)&drop_set_target;
+    gate->set_target           = (void*)&scrypt_set_target;
     gate->ignore_pok           = (void*)&drop_ignore_pok;
-    gate->set_data_size        = (void*)&drop_set_data_size;
-    gate->reverse_endian       = (void*)&reverse_drop_endian;
-    gate->reverse_endian_17_19 = (void*)&reverse_drop_endian_17_19;
+    gate->suw_build_hex_string = (void*)&suw_build_hex_string_80;
+//    gate->set_data_size        = (void*)&set_data_size_80;
+    gate->set_work_data_endian = (void*)&swab_work_data;
+    gate->encode_endian_17_19  = (void*)&encode_big_endian_17_19;
     gate->display_pok          = (void*)&display_drop_pok;
     gate->set_data_and_target_size = (void*)&drop_set_data_and_target_size;
     return true;

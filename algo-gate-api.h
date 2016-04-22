@@ -83,28 +83,29 @@ int   *( *scanhash ) ( int, struct work*, uint32_t, uint64_t*,
 // optional unsafe, must be overwritten if algo uses function
 void   *( *hash )            ( void*, const void*, uint32_t ) ;
 void   *( *hash_alt )        ( void*, const void*, uint32_t );
-void   *( *hash_suw )        ( void*, const void*, uint32_t );
+void   *( *hash_suw )        ( void*, const void* );
 void   *( *init_ctx )        ();
 
 //optional, safe to use default null instance
 bool   *( *aes_ni_optimized ) ();
 // regen_work for decred
-bool   *( *ignore_pok )      ( int*, int*, int* );
+bool   *( *ignore_pok )              ( int*, int*, int* );
 // decode_extra_data for decred
-void   *( *display_pok )     ( struct work*, uint64_t* );
-void   *( *wait_for_diff )   ( struct stratum_ctx* );
-double *( *get_max64 )       ();
-void   *( *set_target)       ( struct work*, double );
-bool   *( *get_scratchbuf )  ( unsigned char** );
-void   *( *set_data_size )   ( uint32_t*, uint32_t*, struct work* );
-int    *( *set_data_and_target_size )   ( int*, int*, int*, int*, bool* );
-void   *( *gen_merkle_root        )  ( char*, struct stratum_ctx*, int*,
-                                                      uint32_t*, int );
-void   *( *build_stratum_request )  ( char*, struct work*, unsigned char*,
+void   *( *display_pok )             ( struct work*, uint64_t* );
+void   *( *wait_for_diff )           ( struct stratum_ctx* );
+int64_t *( *get_max64 )              ();
+bool   *( *work_decode )             ( const struct json_t*, struct work* );
+void   *( *set_target)               ( struct work*, double );
+bool   *( *get_scratchbuf )          ( unsigned char** );
+int    *( *suw_build_hex_string )    ( );
+int    *( *set_data_and_target_size )( int*, int*, int*, int*, bool* );
+void   *( *gen_merkle_root )         ( char*, struct stratum_ctx*, int*,
+                                       uint32_t*, int );
+void   *( *build_stratum_request )   ( char*, struct work*, unsigned char*,
                                        char*, char* ); 
-void   *( *reverse_endian )          ( struct work* );
+void   *( *set_work_data_endian )    ( struct work* );
 // reverse_endian_34_35 for decred 
-void   *( *reverse_endian_17_19 )    ( uint32_t*, uint32_t*, struct work* );
+void   *( *encode_endian_17_19 )     ( uint32_t*, uint32_t*, struct work* );
 void   *( *calc_network_diff )       ( struct work* );
 unsigned char*  *( *get_xnonce2str ) ( struct work*, size_t );
 void   *( *set_benchmark_work_data ) ( struct work* );
@@ -124,6 +125,8 @@ void   *( *init_nonceptr )           ( struct work*, struct work* ,uint32_t**,
                                        int, int, int, int );
 } algo_gate_t;
 
+extern algo_gate_t algo_gate;
+
 // Declare null instances
 
 void do_nothing();
@@ -133,43 +136,65 @@ void *return_null();
 void algo_not_tested();
 
 // allways returns failure
-int     null_scanhash ( int thr_id, struct work* work, uint32_t max_nonce,
+int    null_scanhash ( int thr_id, struct work* work, uint32_t max_nonce,
               uint64_t *hashes_done, unsigned char* scratchbuf );
 
-// just a stub that returns success
-void    null_hash       ( void *output, const void *pdata, uint32_t len );
+// displays warning
+void   null_hash     ( void *output, const void *pdata, uint32_t len );
+void   null_hash_alt ( void *output, const void *pdata, uint32_t len );
+void   null_hash_suw ( void *output, const void *pdata );
 
-// not truly null, but default, used to simplify algo registration by
-// allowing algos to avoid needing to implement their own custom
-// functions if the default works in their case.
-void    null_gen_merkle_root( char*, struct stratum_ctx* sctx,
+// default
+void   sha256_gen_merkle_root( char*, struct stratum_ctx* sctx,
                int* headersize, uint32_t* extraheader, int extraheader_size );
-double  null_get_max64  ();
-void    null_set_target ( struct work* work, double job_diff );
-bool    null_get_scratchbuf( char** scratchbuf );
-void    null_set_data_size ( uint32_t* data_size, uint32_t* adata_sz );
-void    null_build_stratum_request( char* req, struct work* work,
+void   SHA256_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx );
+
+// pick your favorite or define your own
+int64_t get_max64_0x1fffffLL(); // default
+int64_t get_max64_0x40LL();
+int64_t get_max64_0x3ffff();
+int64_t get_max64_0x3fffffLL();
+int64_t get_max64_0x1ffff();
+
+void   std_set_target ( struct work* work, double job_diff );
+void   scrypt_set_target( struct work* work, double job_diff );
+
+// default
+bool std_work_decode( const json_t *val, struct work *work);
+
+// default
+int    suw_build_hex_string_128();
+int    suw_build_hex_string_80();
+int    set_data_size_128();
+int    set_data_size_80 ();
+
+void   std_build_stratum_request( char* req, struct work* work,
                unsigned char *xnonce2str, char* ntimestr, char* noncestr );
-void    null_reverse_endian_17_19( uint32_t* ntime , uint32_t* nonce,
-                                    struct work* work );
-void    null_calc_network_diff( struct work* work );
-unsigned char*   null_get_xnonce2str( struct work* work, size_t xnonce1_size );
-void    null_set_benchmark_work_data( struct work* work );
-void    null_build_extraheader( struct work* work, struct stratum_ctx* sctx,
+
+// default
+void std_set_work_data_endian( struct work *work );
+void swab_work_data( struct work *work );
+
+// default
+void   encode_little_endian_17_19( uint32_t* ntime , uint32_t* nonce,
+                                   struct work* work );
+void   encode_big_endian_17_19( uint32_t* ntime , uint32_t* nonce,
+                                struct work* work );
+
+void   std_calc_network_diff( struct work* work );
+
+unsigned char* std_get_xnonce2str( struct work* work, size_t xnonce1_size );
+void   std_set_benchmark_work_data( struct work* work );
+void   std_build_extraheader( struct work* work, struct stratum_ctx* sctx,
                                  uint32_t* extraheader, int headersize );
 
-// In a reversal of logic the true null_init_nonce is used by only one
-// algo, so far. Every other algo uses the same standard function.
-// Both are defined here, the standard is the default initialised below
-// and the null is registered only by algo hodl.
-//void    null_init_nonceptr( struct work* work, struct work* g_work, 
-//                            uint32_t **nonceptr, int wkcmp_offset,
-//                            int wkcmp_sz, int nonce_oft, int thr_id );
+// This is the default, if you need null do it yourself.
 void    std_init_nonceptr ( struct work* work, struct work* g_work,
                             uint32_t **nonceptr, int wkcmp_offset,
                             int wkcmp_sz, int nonce_oft, int thr_id );
 
-char* null_get_nonce2str ( struct work* work );
+// Gate admin functions
+bool register_algo_gate( int algo, algo_gate_t *gate );
 
 // The register functions for all the algos can be declared here to reduce
 // compiler warnings but that's just more work for devs adding new algos.

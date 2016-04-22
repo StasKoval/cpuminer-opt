@@ -502,7 +502,8 @@ bool register_pluck_algo( algo_gate_t* gate )
   algo_not_tested();
   gate->scanhash       = (void*)&scanhash_pluck;
   gate->hash           = (void*)&pluck_hash;
-  gate->set_target     = (void*)&pluck_set_target;
+//  gate->set_target     = (void*)&pluck_set_target;
+  gate->set_target     = (void*)&scrypt_set_target;
   gate->get_scratchbuf = (void*)&get_pluck_scratchbuf;
   gate->get_max64      = (void*)&pluck_get_max64;
   return true;

@@ -19,8 +19,6 @@
 #include "hash_api.h"
 #include "vperm.h"
 
-//#ifdef AES_NI
-
 #ifndef NO_AES_NI
 #include <wmmintrin.h>
 #else

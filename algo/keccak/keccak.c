@@ -54,10 +54,12 @@ int scanhash_keccak(int thr_id, struct work *work,
 	return 0;
 }
 
+/*
 void keccak_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx )
 {
   SHA256( sctx->job.coinbase, (int)sctx->job.coinbase_size, merkle_root );
 }
+*/
 
 void keccak_set_target( struct work* work, double job_diff )
 {
@@ -69,7 +71,8 @@ bool register_keccak_algo( algo_gate_t* gate )
 //  gate->init_ctx = &init_keccak_aes_ctx;
   gate->scanhash        = (void*)&scanhash_keccak;
   gate->hash            = (void*)&keccakhash;
-  gate->gen_merkle_root = (void*)&keccak_gen_merkle_root;
+//  gate->gen_merkle_root = (void*)&keccak_gen_merkle_root;
+  gate->gen_merkle_root = (void*)&SHA256_gen_merkle_root;
   gate->set_target      = (void*)&keccak_set_target;
   return true;
 };

@@ -108,17 +108,20 @@ int scanhash_pentablake(int thr_id, struct work *work, uint32_t max_nonce,
 	return 0;
 } 
 
+/*
 int64_t pentablake_get_max64 ()
 {
   return 0x3ffffLL;
 }
+*/
 
 bool register_pentablake_algo( algo_gate_t* gate )
 {
 //  gate->init_ctx = init_pentablake_ctx;
     gate->scanhash  = (void*)&scanhash_pentablake;
     gate->hash      = (void*)&pentablakehash;
-    gate->get_max64 = (void*)&pentablake_get_max64;
+//    gate->get_max64 = (void*)&pentablake_get_max64;
+    gate->get_max64 = (void*)&get_max64_0x3ffff;
     return true;
 };
 

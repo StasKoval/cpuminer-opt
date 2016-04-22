@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <x86intrin.h>
+#include "miner.h"
 
 #include "miner.h"
 

@@ -134,6 +134,7 @@ bool register_fresh_algo( algo_gate_t* gate )
     gate->hash       = (void*)&freshhash;
     gate->hash_alt   = (void*)&freshhash;
     gate->set_target = (void*)&fresh_set_target;
+    gate->get_max64  = (void*)&get_max64_0x3ffff;
     return true;
 };
 

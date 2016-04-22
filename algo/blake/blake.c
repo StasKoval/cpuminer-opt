@@ -94,6 +94,7 @@ int scanhash_blake( int thr_id, struct work *work, uint32_t max_nonce,
 	return 0;
 }
 
+// changed to get_max64_0x3fffffLL in cpuminer-multi-decred
 int64_t blake_get_max64 ()
 {
   return 0x7ffffLL;
