@@ -2,8 +2,6 @@
 #include <x86intrin.h>
 #include "miner.h"
 
-#include "miner.h"
-
 #ifndef NO_AES_NI
 
 static inline void ExpandAESKey256_sub1(__m128i *tmp1, __m128i *tmp2)
