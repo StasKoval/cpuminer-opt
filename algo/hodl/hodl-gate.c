@@ -129,7 +129,6 @@ bool register_hodl_algo ( algo_gate_t* gate )
 #ifdef NO_AES_NI
   gate->aes_ni_optimized = (void*)&return_false;
   gate->scanhash               = (void*)&scanhash_hodl;
-  gate->set_data_size          = (void*)&hodl_set_data_size;
 #else
   gate->aes_ni_optimized = (void*)&return_true;
   gate->scanhash               = (void*)&scanhash_hodl_wolf;
