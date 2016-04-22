@@ -86,10 +86,12 @@ int scanhash_cryptonight( int thr_id, struct work *work, uint32_t max_nonce,
     return 0;
 }
 
+/*
 int64_t cryptonight_get_max64 ()
 {
   return 0x40LL;
 }
+*/
 
 bool register_cryptonight_algo( algo_gate_t* gate )
 {
@@ -97,7 +99,8 @@ bool register_cryptonight_algo( algo_gate_t* gate )
   gate->scanhash  = (void*)&scanhash_cryptonight;
   gate->hash      = (void*)&cryptonight_hash;
   gate->hash_suw  = (void*)&cryptonight_hash_suw;  
-  gate->get_max64 = (void*)&cryptonight_get_max64;
+//  gate->get_max64 = (void*)&cryptonight_get_max64;
+  gate->get_max64 = (void*)&get_max64_0x40LL;
   jsonrpc_2       = true;
   return true;
 };

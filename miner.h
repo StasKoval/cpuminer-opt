@@ -6,18 +6,18 @@
 #define USER_AGENT PACKAGE_NAME "/" PACKAGE_VERSION
 #define MAX_CPUS 16
 
+//#ifndef NO_AES_NI
+ #ifndef __AES__
+  #define NO_AES_NI
+ #endif
+//#endif
+
 #ifdef _MSC_VER
 
 #undef USE_ASM  /* to fix */
 
 #ifdef NOASM
 #undef USE_ASM
-#endif
-
-#ifndef NO_AES_NI
- #ifndef __AES__
-  #define NO_AES_NI
- #endif
 #endif
 
 /* missing arch defines for msvc */
@@ -290,6 +290,7 @@ void   work_set_target_ratio( struct work* work, uint32_t* hash );
 
 void   get_currentalgo( char* buf, int sz );
 bool   has_aes_ni( void );
+bool   has_sse2();
 void   bestcpu_feature( char *outbuf, int maxsz );
 void   processor_id ( int functionnumber, int output[4] );
 
@@ -449,6 +450,7 @@ enum algos {
         ALGO_LUFFA,       
         ALGO_LYRA2RE,       
         ALGO_LYRA2REV2,   
+        ALGO_M7M,
         ALGO_MYR_GR,      
         ALGO_NEOSCRYPT,
         ALGO_NIST5,       
@@ -496,6 +498,7 @@ static const char *algo_names[] = {
         "luffa",
         "lyra2re",
         "lyra2rev2",
+        "m7m",
         "myr-gr",
         "neoscrypt",
         "nist5",
@@ -561,6 +564,8 @@ extern int opt_scrypt_n;
 extern double opt_diff_factor;
 extern unsigned int opt_nfactor;
 extern bool opt_randomize;
+extern bool allow_mininginfo;
+
 
 extern pthread_mutex_t rpc2_job_lock;
 extern pthread_mutex_t rpc2_login_lock;
@@ -592,6 +597,7 @@ Options:\n\
                           luffa        Luffa\n\
                           lyra2re      lyra2\n\
                           lyra2rev2    lyrav2\n\
+                          m7m\n\
                           myr-gr       Myriad-Groestl\n\
                           neoscrypt    NeoScrypt(128, 2, 1)\n\
                           nist5        Nist5\n\

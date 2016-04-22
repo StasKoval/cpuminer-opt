@@ -9,9 +9,6 @@
 #include "hash-groestl.h"
 #include "miner.h"
 
-//#define AES_NI
-//#ifdef AES_NI
-
 #ifndef NO_AES_NI
 
 #include "groestl-version.h"

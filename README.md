@@ -4,41 +4,36 @@ Building on linux:
 
 Important new procedure for v3.0.3.
 
-Ensure you have the following packages intalled in addition to the
-standard development packages
+Dependencies
 
-libssl-dev
-libcurl4-openssl-dev
+libcurl
+jansson
+ssl
+libgmp
+pthreads
+zlib
+libboost
+
+
+./build.sh should now work for most users. If not some tips follow.
+
+The manual procedure is:
+
+./autogen.sh
+./configure CFLAGS="-O3 -march=native" --with-crypto --with-curl
+make
 
 "-march-native" should work for most CPUS. Some have found they
 get better performance if they use the CPU's family name, ie haswell.
 
-Some users with AMD CPUs without AES_NI have reported compile problem
-using -march=native or a specific arch but have been successful 
-using -march=core2.
-
 Use was works best for you.
  
-Recent CPU with AES_NI (core i second gen):
-
-./autogen.sh 
-./configure CFLAGS="-O3 -march=native" --with-crypto --with-curl
-make
-
-Older CPU without AES_NI (core2):
-
-./autogen.sh 
-./configure CFLAGS="-O3 -march=native -DNO_AES_NI" --with-crypto --with-curl
-make
-
-Smoe users with AMD CPUs without AES_NI have reported compile problem
-using -march=native or a specific arch but have been successful
-using -march=core2.
+Some users with AMD CPUs without AES_NI have reported compile problem
+using -march=native but have had success with -march=btver1. Using
+-march=core2 also seems to work but with lower performance.
 
 Support for even older x86_64 without AES_NI or SSE2 is not availble.
-
-A problem has been found with build.sh and it should not be used
-at this time.
+cpuminer-multi by TPruvot supports this architecture.
 
 Windows is not supported at this time.
 

@@ -53,6 +53,7 @@ cpuminer_SOURCES = \
   crypto/c_skein.c \
   crypto/hash.c \
   crypto/aesb.c \
+  crypto/magimath.cpp \
   algo/argon2/argon2a.c \
   algo/argon2/ar2/argon2.c \
   algo/argon2/ar2/opt.c \
@@ -66,7 +67,6 @@ cpuminer_SOURCES = \
   algo/blake/decred.c \
   algo/blake/pentablake.c \
   algo/bmw/bmw256.c \
-  algo/c11.c \
   algo/cubehash/sse2/cubehash_sse2.c\
   algo/cryptolight.c \
   algo/cryptonight/cryptonight-common.c\
@@ -76,6 +76,7 @@ cpuminer_SOURCES = \
   algo/echo/aes_ni/hash.c\
   algo/fresh.c \
   algo/groestl/groestl.c \
+  algo/groestl/myr-groestl.c \
   algo/groestl/sse2/grso.c\
   algo/groestl/sse2/grso-asm.c\
   algo/groestl/aes_ni/hash-groestl.c \
@@ -99,23 +100,26 @@ cpuminer_SOURCES = \
   algo/lyra2/sponge.c \
   algo/lyra2/lyra2rev2.c \
   algo/lyra2/lyra2re.c \
-  algo/myr-groestl.c \
   algo/keccak/sse2/keccak.c \
-  algo/quark/quark.c \
-  algo/qubit/qubit.c \
+  algo/m7m.c \
   algo/neoscrypt.c \
   algo/nist5.c \
   algo/pluck.c \
+  algo/quark/quark.c \
+  algo/qubit/qubit.c \
+  algo/ripemd/sph_ripemd.c \
   algo/scrypt.c \
   algo/scryptjane/scrypt-jane.c \
-  algo/sha2.c \
-  algo/sibcoin.c \
+  algo/sha2/sha2.c \
   algo/simd/sse2/nist.c \
   algo/simd/sse2/vector.c \
   algo/skein/skein.c \
   algo/skein/skein2.c \
   algo/s3.c \
+  algo/tiger/sph_tiger.c \
   algo/x11/x11.c \
+  algo/x11/x11gost.c \
+  algo/x11/c11.c \
   algo/x13/x13.c \
   algo/x14/x14.c \
   algo/x15/x15.c \
@@ -152,7 +156,7 @@ if HAVE_WINDOWS
 endif
 
 cpuminer_LDFLAGS	= @LDFLAGS@
-cpuminer_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -lssl -lcrypto -lboost_thread -lboost_system
+cpuminer_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -lssl -lcrypto -lboost_thread -lboost_system -lgmp
 cpuminer_CPPFLAGS = @LIBCURL_CPPFLAGS@ $(ALL_INCLUDES)
 cpuminer_CFLAGS   = -Wno-pointer-sign -Wno-pointer-to-int-cast $(disable_flags)
 

@@ -1,50 +1,48 @@
-        Release 3.1.14 of cpuminer-opt is available for download.
+        Release 3.1.16 of cpuminer-opt is available for download.
 
 
 All users are encouraged to upgrade.
 
-New in 3.1.14
+cpuminer-opt now supports 32 algorithms on CPUs with at least SSE2
+capabilities including Intel Core2 and AMD equivalent. See the
+performance chart below for details.
 
-Algos
-  - cryptonight algo is now supported on CPUs without AES_NI.
-    All algos now support both CPU architectures.
-  - jane added as an alias for scryptjane with default N-factor 16
+In addition 13 algorithms have optimizations to take advantage of
+CPUs with AES_NI for even greater performance, including the Intel
+Sandy Bridge (Core-i 2xxx) and AMD equivalent.
 
-Build enhancements, see details in README.md
+New in v3.1.16
+
+  - added m7m algo
+  - new dependency on gmp
+
+New in v3.1.15
+
+  - unified build procedure fixed
      - build.sh now works for CPUs with and without AES_NI
-     - it is no longer necessary to add -DNO_AES_NI CFLAG to
+     - it is no longer necessary to add -DNO_AES_NI CFLAG to the
        configure command when building for CPUs without AES_NI.
 
-UI enhancements
-     - enhanced capabilities check will now check CPU architecture
-       SW build and algo for AES_NI and SSE2 capabilities.
-     - a warning is displayed if mining an untested algo.
+Recently added dependencies:
 
-Code cleanup
-     - removed a few more compiler warnings
-     - removed dead code
-
-Algo gate enhancements (for devs)
-     - replaced algo specific null gate functions with generic null 
-       functions
+  - gmp
+  - libboost-dev
+  - libboost-system-dev
+  - libboost-thread-dev
 
 Recently added algos:
 
   - hodl added with support for CPUs with and without AES_NI
-     Note: Compiling requires some additional libraries not included
-     in the default instalation of most Linux distributions:
-     libboost-dev, libboost-system-dev, libboost-thread-dev.
-  - argon2 added, 6% faster than encel version
+  - argon2 
   - decred (blake256r14)
   - vanilla (blake256r8vnl)
-  - x14 added with AES_NI and SSE2 optimisations
+  - x14 added with AES_NI and SSE2 optimizations
   - blake
   - blake2s
   - yescrypt
   - scryptjane
   - scrypt
   - sha256d
-  - pluck, drop and bastion added, benchmark tested only
 
 Recently improved algos:
 
@@ -60,59 +58,60 @@ Recently improved algos:
        +45% SSE2
   - myr-gr optimized for AES_NI, marginal increase in hashrate
 
-Starting in release 3.1 a CPU with a minimum of SSE2 is required.
-This includes core2 and newer CPUs. Some algos also require AES_NI,
-see chart below.
-
-Users with non-SSE2 CPUs or who desire to mine algos not supported by
+Users with non-SSE2 CPUs or whoi want to mine algos not supported by
 cpuminer-opt may find cpuminer-multi by TPruvot useful.
 
-Performance chart for Intel i7-6700K @ 4 GHz, 16 GB mem.
+The performance chart below is for an Intel i7-6700K @ 4 GHz, 16 GB mem.
 
-The normalisation rates have ben added to the chart to help with profit
+Normalization rates have ben added to the chart to help with profit
 switching pools. Reference algo x11 = 1.
 
-Normalised profitability = algo profitability * normalisation rate
+Due to the peculiarities of some algorithms their performance on other CPU
+architectures may not scale equally. Their normalizations rates will also
+differ from those listed below. YMMV.
+
+Normalized profitability = algo profitability * normalization rate
 
                AES_NI    SSE2(1)   norm rate(5)
                ------    ----      ---------
-quark          1195 K    924 K        1.61
-qubit          1090      765          1.45
-x11             740      525          1
+x11             740 K    525 K        1
 x13             373      298          0.50
 x14             357      271          0.48
 x15             333      270          0.45
 x17(2)          317      248          0.43
+quark          1195      924          1.61
+qubit          1090      765          1.45
 nist5          2000     1592          3.37
 zr5             850      650          1.15    
 x11gost         540      404          0.73
 c11             733      475          0.99
 myr-gr         1572     1560          2.12
 cryptonight     290 H    165 H        0.00039
-hodl            275      200          0.00037
+hodl            275      200 H        0.00037
 neoscrypt       (4)       32 K        0.043
 lyra2re         (4)      930          1.25
 lyra2rev2       (4)      495          0.65
+argon2          (4)     33.7          0.045
+m7m             (4)     48.7          0.066
+groestl         (4)      931          1.26 
+skein           (4)     5747          7.77
+skein2          (4)     8675         11.7
+pentablake      (4)     3960          5.35
+keccak          (4)     7790         10.5
+scrypt          (4)      113          0.153
+sha256d         (4)     62.5          0.084
 blake           (4)     22.4 M       30.4
 blake2s         (4)     17.5         23.6
 vanilla         (4)     33.0         44.6
 decred          (4)     22.6         30.5 
-pentablake      (4)     3960 K        5.35
-keccak          (4)     7790         10.5
 axiom           (4)       72 H        0.098
-groestl         (4)      931          1.26 
-skein           (4)     5747          7.77
-skein2          (4)     8675         11.7
-argon2          (4)     33.7 K        0.045
-yescrypt        (4)     3760 H        0.0051
+yescrypt        (4)     3760          0.0051
 scryptjane      (4)      250          0.00034
-scrypt          (4)      113 K        0.153
-sha256d         (4)     62.5 M        0.084
 blakecoin(2)    (4)     33.9 M       45.8
-fresh(2)        (4)      528 K        0.71
 cryptolight(2)  (4)      685 H        0.00093
-pluck(2)        (4)     1925          0.0026
+pluck(2)        (4)     1925 H        0.0026
 drop(2)         (4)      934 K        1.26
+fresh(2)        (4)      528 K        0.71
 
 Footnotes:
 (1) SSE2 rates are simulated in software.

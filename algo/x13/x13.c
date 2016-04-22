@@ -383,6 +383,7 @@ bool register_x13_algo( algo_gate_t* gate )
   gate->scanhash = (void*)&scanhash_x13;
   gate->hash     = (void*)&x13hash;
   gate->hash_alt = (void*)&x13hash_alt;
+  gate->get_max64 = (void*)&get_max64_0x3ffff;
   return true;
 };
 

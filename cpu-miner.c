@@ -72,7 +72,7 @@
 
 #define LP_SCANTIME		60
 
-static algo_gate_t algo_gate;
+algo_gate_t algo_gate;
 
 bool opt_debug = false;
 bool opt_debug_diff = false;
@@ -155,13 +155,10 @@ uint64_t net_blocks = 0;
   int opt_api_remote = 0;
   int opt_api_listen = 4048; 
 
-
   pthread_mutex_t rpc2_job_lock;
   pthread_mutex_t rpc2_login_lock;
   pthread_mutex_t applog_lock;
   pthread_mutex_t stats_lock;
-
-
 
 static char const short_options[] =
 #ifdef HAVE_SYSLOG_H
@@ -170,7 +167,7 @@ static char const short_options[] =
 	"a:b:Bc:CDf:hm:n:p:Px:qr:R:s:t:T:o:u:O:V";
 
 static struct work g_work = {{ 0 }};
-static struct work tmp_work;
+//static struct work tmp_work;
 static time_t g_work_time = 0;
 static        pthread_mutex_t g_work_lock;
 static bool   submit_old = false;
@@ -269,65 +266,21 @@ void work_copy(struct work *dest, const struct work *src)
 	}
 }
 
-/* compute nbits to get the network diff */
-
-static void calc_network_diff(struct work *work)
-{
-	// sample for diff 43.281 : 1c05ea29
-	// todo: endian reversed on longpoll could be zr5 specific...
-	uint32_t nbits = have_longpoll ? work->data[18] : swab32(work->data[18]);
-	uint32_t bits = (nbits & 0xffffff);
-	int16_t shift = (swab32(nbits) & 0xff); // 0x1c = 28
-
-	double d = (double)0x0000ffff / (double)bits;
-
-	for (int m=shift; m < 29; m++) d *= 256.0;
-	for (int m=29; m < shift; m++) d /= 256.0;
-	if (opt_debug_diff)
-		applog(LOG_DEBUG, "net diff: %f -> shift %u, bits %08x",
-                                   d, shift, bits);
-	net_diff = d;
-}
-
 static bool work_decode(const json_t *val, struct work *work)
 {
-	int i;
-	int data_size   = sizeof(work->data);
-        int target_size = sizeof(work->target);
-	int adata_sz    = ARRAY_SIZE(work->data);
-        int atarget_sz  = ARRAY_SIZE(work->target);
 
-        algo_gate.set_data_and_target_size( &data_size, &target_size,
-                                 &adata_sz,  &atarget_sz, &allow_mininginfo );
+    if ( !algo_gate.work_decode( val, work ) )
+        return false;
 
-	if (jsonrpc_2)
-		return rpc2_job_decode(val, work);
+    if ((opt_showdiff || opt_max_diff > 0.) && !allow_mininginfo)
+        algo_gate.calc_network_diff( work );
 
-	if (unlikely(!jobj_binary(val, "data", work->data, data_size)))
-        {
-		applog(LOG_ERR, "JSON invalid data");
-		return false;
-	}
-	if (unlikely(!jobj_binary(val, "target", work->target, target_size)))
-        {
-		applog(LOG_ERR, "JSON invalid target");
-		return false;
-	}
+    work->targetdiff = target_to_diff(work->target);
+    // for api stats, on longpoll pools
+    stratum_diff = work->targetdiff;
+    algo_gate.display_pok( work, &net_blocks );
 
-	for (i = 0; i < adata_sz; i++)
-		work->data[i] = le32dec(work->data + i);
-	for (i = 0; i < atarget_sz; i++)
-		work->target[i] = le32dec(work->target + i);
-
-	if ((opt_showdiff || opt_max_diff > 0.) && !allow_mininginfo)
-           algo_gate.calc_network_diff( work );
-
-	work->targetdiff = target_to_diff(work->target);
-	// for api stats, on longpoll pools
-	stratum_diff = work->targetdiff;
-        algo_gate.display_pok( work, &net_blocks );
-
-	return true;
+    return true;
 }
 
 // good alternative for wallet mining, difficulty and net hashrate
@@ -814,9 +767,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		uchar hash[32];
 
 		bin2hex(noncestr, (const unsigned char *)work->data + 39, 4);
-                // len arg is ignoree by the functions, they know, they
-                //  don't need to be told.
-                algo_gate.hash_suw( hash, work->data, 0 );
+                algo_gate.hash_suw( hash, work->data );
 		char *hashhex = abin2hex(hash, 32);
 		snprintf(s, JSON_BUF_LEN,
 	          "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":4}\r\n",
@@ -825,10 +776,10 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 	   }
            else
            {
-             bool rc = false;
+//             bool rc = false;
              unsigned char *xnonce2str;
 
-             algo_gate.reverse_endian_17_19( &ntime,  &nonce, work );
+             algo_gate.encode_endian_17_19( &ntime, &nonce, work );
              bin2hex( ntimestr, (const unsigned char *)(&ntime), 4 );
              bin2hex( noncestr, (const unsigned char *)(&nonce), 4 );
              xnonce2str = algo_gate.get_xnonce2str( work,
@@ -908,10 +859,6 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 	}
         else
         {
-            char* gw_str = NULL;
-            int data_size = 128;
-            int adata_sz;
-
 	    if (jsonrpc_2)
             {
 	        char noncestr[9];
@@ -920,7 +867,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 
 		bin2hex(noncestr, (const unsigned char *)work->data + 39, 4);
 
-                algo_gate.hash_suw( hash, work->data, 0 );
+                algo_gate.hash_suw( hash, work->data );
 		hashhex = abin2hex(&hash[0], 32);
 		snprintf(s, JSON_BUF_LEN, 
                       "{\"method\": \"submit\", \"params\": "
@@ -958,12 +905,9 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		return true;
 
              } // jsonrpc_2
-
-             algo_gate.set_data_size( &data_size, &adata_sz, work );
-
-	     /* build hex string */
-	     for (i = 0; i < adata_sz; i++)
-		le32enc(&work->data[i], work->data[i]);
+ 
+             char* gw_str = NULL;
+             int data_size = algo_gate.suw_build_hex_string( work );
 
 	     gw_str = abin2hex((uchar*)work->data, data_size);
 
@@ -1129,6 +1073,10 @@ static bool workio_submit_work(struct workio_cmd *wc, CURL *curl)
    /* submit solution to bitcoin via JSON-RPC */
    while (!submit_upstream_work(curl, wc->u.work))
    {
+// Use 2 2D arrsy of function pointers to select stratum or gbt in one
+// D and JSONRPC2 or not in the other.
+// submit_upstream_work[protocol][jsonrpc_2](     );
+
 	if (unlikely((opt_retries >= 0) && (++failures > opt_retries)))
         {
 		applog(LOG_ERR, "...terminating workio thread");
@@ -1385,7 +1333,7 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work, int th
         if (opt_showdiff || opt_max_diff > 0.)
             algo_gate.calc_network_diff( work );
 
-        algo_gate.reverse_endian( work );
+        algo_gate.set_work_data_endian( work );
 
 	pthread_mutex_unlock(&sctx->work_lock);
 
@@ -1468,7 +1416,7 @@ static void *miner_thread(void *userdata)
 	uint32_t end_nonce = 0xffffffffU / opt_n_threads * (thr_id + 1) - 0x20;
 	time_t   firstwork_time = 0;
 	unsigned char *scratchbuf = NULL;
-	char s[16];
+//	char s[16];
 	int  i;
 	memset(&work, 0, sizeof(work));
  
@@ -1696,9 +1644,9 @@ static void *miner_thread(void *userdata)
 //	firstwork_time = time(NULL);
 
      /** Scanhash **/
-     if ( algo_gate.scanhash != null_scanhash ) 
+     if ( algo_gate.scanhash != (void*)null_scanhash ) 
 
-       rc = algo_gate.scanhash( thr_id, &work, max_nonce, &hashes_done,
+       rc = (int) algo_gate.scanhash( thr_id, &work, max_nonce, &hashes_done,
                                       scratchbuf );
      else
        applog(LOG_ERR,"FAIL: %s has no scanhash function registered.\n",
@@ -2628,24 +2576,21 @@ void check_cpu_capability ()
      int cpu_id[4];
      unsigned int nExIds;
      char CPUBrandString[0x40];
-     bool cpu_has_aes  = false,
-          sw_has_aes   = false,
-          cpu_has_sse2 = false,
-          algo_has_aes = algo_gate.aes_ni_optimized();
-     char* grn_yes;
-     char* ylw_no;
-     char* red;
+     bool cpu_has_aes  = has_aes_ni();
+     bool sw_has_aes   = false;
+     bool cpu_has_sse2 = has_sse2();
+     bool sw_has_sse2 = false;
+     bool algo_has_aes = algo_gate.aes_ni_optimized();
+     char* grn_yes = CL_GRN "YES." CL_N;
+     char* ylw_no  = CL_YLW "NO." CL_N;
+     char* ylo     = CL_YLW;
+     char* red     = CL_RED;
 
-     if ( use_colors )
+     if ( !use_colors )
      {
-        grn_yes = CL_GRN "YES." CL_N;
-        ylw_no  = CL_YLW "NO." CL_N;
-        red     = CL_RED;
-     }
-     else
-     {
-        grn_yes = "YES";
-        ylw_no  = "NO";
+        grn_yes = "YES.";
+        ylw_no  = "NO.";
+        ylo     = 0;
         red     = 0;
      }
 
@@ -2665,14 +2610,24 @@ void check_cpu_capability ()
      }
 
      #ifdef __AES__
-       cpu_has_aes = true;
-     #endif
-     #ifndef NO_AES_NI
        sw_has_aes = true;
      #endif
      #ifdef __SSE2__
-       cpu_has_sse2 = true;
+       sw_has_sse2 = true;
      #endif
+
+    void printf_mine_with_aes()
+        { printf("Start mining with AES_NI optimizations...\n\n"); }
+    void printf_mine_without_aes()
+        { printf("Starting mining without AES_NI optimizations...\n\n"); }
+    void printf_bad_cpu()
+        { printf("%sUnsupported CPU architecture, requires SSE2 minimum.%s\n",red,CL_N); }
+    void printf_bad_build()
+        { printf("%sIncompatible SW build, rebuild with \"-march=native\"%s\n",red,CL_N); }
+    void printf_rebuild_for_faster()
+        { printf("%sCPU and algo support AES_NI, but SW build does not.%s\n",ylo,CL_N);
+          printf("%sRebuild with \"-march=native\" for better performance.%s\n",ylo,CL_N); } 
+
 
      printf("Checking CPU capatibility...\n");
      printf( "        %s\n", CPUBrandString );
@@ -2681,7 +2636,7 @@ void check_cpu_capability ()
      if ( cpu_has_aes )
      {
         printf("%s\n", grn_yes );
-        printf("   SW built with AES_NI.......");
+        printf("   SW built for AES_NI........");
         if ( sw_has_aes )
         {
             printf("%s\n", grn_yes);
@@ -2689,32 +2644,27 @@ void check_cpu_capability ()
             if ( algo_has_aes )
             {
                printf("%s\n", grn_yes);
-               printf("Start mining with AES_NI optimisations...\n\n");
+               printf_mine_with_aes();
             }
             else
             {
               printf("%s\n", ylw_no );
-              printf("Start mining without AES_NI optimisations...\n\n");
+              printf_mine_without_aes();
             }
          }
-         else
+         else  // !sw_has_aes
          {
             printf("%s\n", ylw_no );
-            printf("   CPU arch supports SSE2.....");
-            if ( cpu_has_sse2 )
+            if ( algo_has_aes )
             {
-              printf("%s\n", grn_yes );
-              printf("Start mining without AES_NI optimisations...\n\n");
+               printf("   Algo supports AES_NI.......");
+               printf("%s\n", grn_yes);
+               printf_rebuild_for_faster();
             }
-            else
-            {
-              printf("%s\n", ylw_no );
-              printf("%sUnsupported CPU architecture, requires SSE2 minimum.%s\n", red, CL_N);
-              exit(1);
-            }
+         printf_mine_without_aes();
          }
       }
-      else
+      else  // !cpu_has_aes
       {
          printf("%s\n", ylw_no );
          // make sure CPU has at least SSE2
@@ -2722,24 +2672,24 @@ void check_cpu_capability ()
          if ( cpu_has_sse2 )
          {
             printf("%s\n", grn_yes );
-            printf("   SW built with SSE2.........");
-            if ( sw_has_aes )         
-            {         
-              printf("%s\n", ylw_no );
-              printf("%sIncompatible SW build, rebuild with NO_AES_NI%s\n", red, CL_N );
-              exit(1);
+            printf("   SW built for SSE2..........");
+            if ( sw_has_sse2 && !sw_has_aes )
+            {
+                printf("%s\n", grn_yes );
+                printf_mine_without_aes();
             }
             else
             {
-              printf("%s\n", grn_yes );
-              printf("Start mining without AES_NI optimisations...\n\n");
+                printf("%s\n", ylw_no );
+                printf_bad_build();
+//                exit(1);
             }
          }            
          else            
          {
             printf("%s\n", ylw_no );
-            printf("%sUnsupported CPU architecture, requires SSE2 minimum.%s\n", red, CL_N );
-            exit(1);
+            printf_bad_cpu();
+//            exit(1);
          }
       }
 }

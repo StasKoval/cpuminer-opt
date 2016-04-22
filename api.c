@@ -27,7 +27,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <assert.h>
-
+#include <openssl/sha.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -314,7 +314,7 @@ static size_t base64_encode(const uchar *indata, size_t insize, char *outptr, si
 	return len;
 }
 
-#include "compat/curl-for-windows/openssl/openssl/crypto/sha/sha.h"
+//#include "compat/curl-for-windows/openssl/openssl/crypto/sha/sha.h"
 
 /* websocket handshake (tested in Chrome) */
 static int websocket_handshake(SOCKETTYPE c, char *result, char *clientkey)

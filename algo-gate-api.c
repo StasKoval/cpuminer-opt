@@ -17,19 +17,49 @@
 #include "miner.h"
 #include "algo-gate-api.h"
 
-// define null functions
+// Define null and standard functions.
+//
+// Generic null functions do nothing except satisfy the syntax and
+// can be used for optional safe gate functions.
+//
+// null gate functions are genarally used for mandatory and unsafe functions
+// and will usually display an error massage and/or return a fail code.
+// They are registered by default and are expected to be overwritten.
+//
+// std functions are non-null functions used by the most number of algos
+// are are default.
+//
+// aux functions are functions used by many, but not most, algos and must
+// be registered by eech algo using them. They usually have descriptive
+// names.
+//
+// custom functions are algo spefic and are defined and registered in the
+// algo's source file and are usually named [algo]_[function]. 
+//
+// In most cases the default is a null or std function. However in some
+// cases, for convenience when the null function is not the most popular,
+// the std function will be defined as default and the algo must register
+// an appropriate null function.
+//
+// similar algos may share a gate function that may be defined here or
+// in a source file common to the similar algos.
+//
+// gate functions may call other gate functions under the following
+// restrictions. Any gate function defined here or used by more than one
+// algo must call other functions using the gate: algo_gate.[function]. 
+// custom functions may call other custom functions directly using
+// [algo]_[function], howver it is recommended to alway use the gate.
+//
+// If, under rare circumstances, an algo with a custom gate function 
+// needs to call a function of another algo it must define and register
+// a private gate from its rgistration function and use it to call
+// forein functions: [private_gate].[function]. If the algo needs to call
+// a utility function defined here it may do so directly.
+//
+// The algo's gate registration function is caled once from the main thread
+// and can do other intialization in addition such as setting options or
+// other global or local (to the algo) variables.
 
-// null vs default: strictly speaking a null function should do nothing
-// and a default function should do what satisfies the most clients (algos).
-// This distinction is blurred and the two function types are combined.
-// A null function is either a true do-nothing or it is the default
-// action. The only rule is that if even a single client requires a do-nothing
-// function it must be the null function. This will require every other
-// client to define and register a custom function. In some cases where
-// many clients require the same action it may be desireable to define
-// an explicit default do-something function here that will eliminate
-// the need for those clients to each define their own. The must still
-// register the default.
 // As algo-gate evolves some function are taking on multiple personalities.
 // The same function could perform completely unrelated actions for
 // different algos, they jut happen to require that action at the same
@@ -38,8 +68,8 @@
 // of aggo-gate, whether to have many smaller, unique gate functions or
 // fewer, larger functions with more code duplication.
 
-// A handy predefined generic null function that can be as any null gate
-// function with the samesignature. 
+// A set of predefined generic null functions that can be used as any null
+// gate function with the same signature. 
 
 void do_nothing   () {}
 bool return_true  () { return true;  }
@@ -57,11 +87,13 @@ void algo_not_implemented()
   applog(LOG_ERR,"Algo %s has not been Implemented.",algo_names[opt_algo]);
 }
 
+// default null functions
+
 int null_scanhash(int thr_id, struct work* work,  uint32_t  max_nonce,
               uint64_t *hashes_done, unsigned char* scratchbuf )
 {
    applog(LOG_WARNING,"SWERR: undefined scanhash function in algo_gate");
-   return false;
+   return 0;
 }
 
 void null_hash( void *output, const void *pdata, uint32_t len )
@@ -71,38 +103,66 @@ void null_hash( void *output, const void *pdata, uint32_t len )
 
 void null_hash_suw( void *output, const void *pdata )
 {
-  applog(LOG_WARNING,"SWERR: null_hash unsafe null function");
+  applog(LOG_WARNING,"SWERR: null_hash_suw unsafe null function");
 };
-
-double null_get_max64()
-{
-  return 0x1fffffLL;
-}
 
 void null_hash_alt   ( void *output, const void *pdata, uint32_t len )
 {
   applog(LOG_WARNING,"SWERR: null_hash_alt unsafe null function");
 };
 
-// This is the value for most, make it the default
-void null_gen_merkle_root( char* merkle_root, struct stratum_ctx* sctx,
+// Standard functions (default)
+
+// pick your favorite or define your own
+int64_t get_max64_0x1fffffLL() { return 0x1fffffLL; } // default
+int64_t get_max64_0x40LL()     { return 0x40LL;     }
+int64_t get_max64_0x3ffff()    { return 0x3ffff;    }
+int64_t get_max64_0x3fffffLL() { return 0x3fffffLL; }
+int64_t get_max64_0x1ffff()    { return 0x1ffff;    }
+
+// This is the default
+void sha256d_gen_merkle_root( char* merkle_root, struct stratum_ctx* sctx,
                   int* headersize, uint32_t* extraheader, int extraheader_size )
 {
   sha256d(merkle_root, sctx->job.coinbase, (int) sctx->job.coinbase_size);
 }
 
-// This is the value for most, make it default
-void null_set_target( struct work* work, double job_diff )
+void SHA256_gen_merkle_root ( char* merkle_root, struct stratum_ctx* sctx )
+{
+ SHA256( sctx->job.coinbase, (int)sctx->job.coinbase_size, merkle_root );
+}
+
+// default
+void std_set_target( struct work* work, double job_diff )
 {
    work_set_target( work, job_diff / opt_diff_factor );
 }
 
-void null_set_data_size( uint32_t* data_size, uint32_t* adata_sz )
-{ 
-  *adata_sz = *data_size / sizeof(uint32_t);
+// most scrypt based algos
+void scrypt_set_target( struct work* work, double job_diff )
+{
+   work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
 
-void null_build_stratum_request( char* req, struct work* work,
+// default
+int set_data_size_128() { return 128; }
+int set_data_size_80 () { return  80; }
+
+// default
+int  suw_build_hex_string_128( struct work *work )
+{
+  for ( int i = 0; i < 128 / sizeof(uint32_t); i++ )
+     le32enc( &work->data[i], work->data[i] );
+  return 128;
+}
+int  suw_build_hex_string_80( struct work *work )
+{
+  for ( int i = 0; i < 80 / sizeof(uint32_t); i++ )
+     le32enc( &work->data[i], work->data[i] );
+  return 80;
+}
+
+void std_build_stratum_request( char* req, struct work* work,
                unsigned char *xnonce2str, char* ntimestr, char* noncestr )
 {
    snprintf( req, JSON_BUF_LEN,
@@ -110,15 +170,41 @@ void null_build_stratum_request( char* req, struct work* work,
          rpc_user, work->job_id, xnonce2str, ntimestr, noncestr );
 }
 
-void null_reverse_endian_17_19 (  uint32_t* ntime,  uint32_t* nonce,
+// default
+void std_set_work_data_endian( struct work *work )
+{
+   work->data[20] = 0x80000000;
+   work->data[31] = 0x00000280;
+}
+void swab_work_data( struct work *work )
+{
+   for ( int i = 0; i <= 18; i++ )
+      work->data[i] = swab32( work->data[i] );
+   work->data[20] = 0x80000000;
+   work->data[31] = 0x00000280;
+}
+
+void reverse_endian( struct work* work )
+{
+  for ( int i = 0; i <= 18; i++ )
+     work->data[i] = swab32( work->data[i] );
+}
+
+// default
+void encode_little_endian_17_19 ( uint32_t* ntime,  uint32_t* nonce,
                                   struct work* work )
 {
   le32enc( ntime, work->data[17] );
   le32enc( nonce, work->data[19] );
 }
+void encode_big_endian_17_19( uint32_t* ntime,  uint32_t* nonce,
+                              struct work* work )
+{
+   be32enc( ntime, work->data[17] );
+   be32enc( nonce, work->data[19] );
+}
 
-// used by most algos
-void null_calc_network_diff ( struct work* work )
+void std_calc_network_diff ( struct work* work )
 {
    // sample for diff 43.281 : 1c05ea29
    // todo: endian reversed on longpoll could be zr5 specific...
@@ -134,18 +220,50 @@ void null_calc_network_diff ( struct work* work )
        net_diff /= 256.0;
 }
 
-unsigned char* null_get_xnonce2str( struct work* work, size_t xnonce1_size )
+bool std_work_decode( const json_t *val, struct work *work)
+{
+    int i;
+    int data_size   = sizeof(work->data);
+    int target_size = sizeof(work->target);
+    int adata_sz    = ARRAY_SIZE(work->data);
+    int atarget_sz  = ARRAY_SIZE(work->target);
+ 
+    algo_gate.set_data_and_target_size( &data_size, &target_size,
+            &adata_sz,  &atarget_sz, &allow_mininginfo );
+
+    if (jsonrpc_2)
+        return rpc2_job_decode(val, work);
+
+    if (unlikely(!jobj_binary(val, "data", work->data, data_size)))
+    {
+       applog(LOG_ERR, "JSON invalid data");
+       return false;
+    }
+    if (unlikely(!jobj_binary(val, "target", work->target, target_size)))
+    {
+       applog(LOG_ERR, "JSON invalid target");
+       return false;
+     }
+
+     for (i = 0; i < adata_sz; i++)
+           work->data[i] = le32dec(work->data + i);
+     for (i = 0; i < atarget_sz; i++)
+           work->target[i] = le32dec(work->target + i);
+     return true;
+}
+
+unsigned char* std_get_xnonce2str( struct work* work, size_t xnonce1_size )
 {
   return abin2hex(work->xnonce2, work->xnonce2_len);
 }
 
-void null_set_benchmark_work_data( struct work* work )
+void std_set_benchmark_work_data( struct work* work )
 {
    work->data[20] = 0x80000000;
    work->data[31] = 0x00000280;
 }
 
-void null_build_extraheader( struct work* work, struct stratum_ctx* sctx,
+void std_build_extraheader( struct work* work, struct stratum_ctx* sctx,
                               uint32_t* extraheader, int headersize )
 {
    work->data[17] = le32dec(sctx->job.ntime);
@@ -185,19 +303,19 @@ void init_null_algo_gate( algo_gate_t* gate )
    gate->ignore_pok               = (void*)&return_false;
    gate->display_pok              = (void*)&do_nothing;
    gate->wait_for_diff            = (void*)&do_nothing;
-   gate->get_max64                = (void*)&null_get_max64;
+   gate->get_max64                = (void*)&get_max64_0x1fffffLL;
    gate->get_scratchbuf           = (void*)&return_true;
-   gate->gen_merkle_root          = (void*)&null_gen_merkle_root;
-   gate->build_stratum_request    = (void*)&null_build_stratum_request;
-   gate->set_target               = (void*)&null_set_target;
-   gate->set_data_size            = (void*)&null_set_data_size;
+   gate->gen_merkle_root          = (void*)&sha256d_gen_merkle_root;
+   gate->build_stratum_request    = (void*)&std_build_stratum_request;
+   gate->set_target               = (void*)&std_set_target;
+   gate->suw_build_hex_string     = (void*)&suw_build_hex_string_128;
    gate->set_data_and_target_size = (void*)&do_nothing;
-   gate->reverse_endian           = (void*)&do_nothing;
-   gate->reverse_endian_17_19     = (void*)&null_reverse_endian_17_19;
-   gate->calc_network_diff        = (void*)&null_calc_network_diff;
-   gate->get_xnonce2str           = (void*)&null_get_xnonce2str;
-   gate->set_benchmark_work_data  = (void*)&null_set_benchmark_work_data;
-   gate->build_extraheader        = (void*)&null_build_extraheader;
+   gate->set_work_data_endian     = (void*)&std_set_work_data_endian;
+   gate->encode_endian_17_19      = (void*)&encode_little_endian_17_19;
+   gate->calc_network_diff        = (void*)&std_calc_network_diff;
+   gate->get_xnonce2str           = (void*)&std_get_xnonce2str;
+   gate->set_benchmark_work_data  = (void*)&std_set_benchmark_work_data;
+   gate->build_extraheader        = (void*)&std_build_extraheader;
    gate->prevent_dupes            = (void*)&return_false;
    gate->thread_barrier_init      = (void*)&do_nothing;
    gate->thread_barrier_wait      = (void*)&do_nothing;
@@ -245,6 +363,7 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
      case ALGO_LUFFA:       register_luffa_algo      ( gate ); break;
      case ALGO_LYRA2RE:     register_lyra2re_algo    ( gate ); break;
      case ALGO_LYRA2REV2:   register_lyra2rev2_algo  ( gate ); break;
+     case ALGO_M7M:         register_m7m_algo        ( gate ); break;
      case ALGO_MYR_GR:      register_myriad_algo     ( gate ); break;
      case ALGO_NEOSCRYPT:   register_neoscrypt_algo  ( gate ); break;
      case ALGO_NIST5:       register_nist5_algo      ( gate ); break;

@@ -6,8 +6,8 @@
 #include "block.h"
 #include <sstream>
 #include "tinyformat.h"
-#include <boost/unordered_map.hpp>
 #include <boost/thread.hpp>
+#include <boost/unordered_map.hpp>
 #include "hash.h"
 #include <openssl/aes.h>
 #include <openssl/evp.h>

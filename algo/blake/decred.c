@@ -157,10 +157,19 @@ unsigned char* decred_get_xnonce2str( struct work* work, size_t xnonce1_size )
    return abin2hex((unsigned char*)(&work->data[36]), xnonce1_size );
 }
 
+/*
 void decred_set_data_size( int* data_size, int* adata_sz )
 {
   *data_size = 192;
   *adata_sz  = 180 / 4;
+}
+*/
+
+int  decred_suw_build_hex_string( struct work *work )
+{
+  for ( int i = 0; i < 180 / sizeof(uint32_t); i++ )
+     le32enc( &work->data[i], work->data[i] );
+  return 192;
 }
 
 void decred_gen_merkle_root( char* merkle_root, struct stratum_ctx* sctx,
@@ -216,10 +225,12 @@ bool decred_prevent_dupes( uint32_t* nonceptr, struct work* work, struct stratum
    return false;
 }
 
+/*
 int64_t decred_get_max64 ()
 {
    return 0x3fffffLL;
 }
+*/
 
 bool register_decred_algo( algo_gate_t* gate )
 {
@@ -227,12 +238,14 @@ bool register_decred_algo( algo_gate_t* gate )
   gate->scanhash                 = (void*)&scanhash_decred;
   gate->hash                     = (void*)&decred_hash;
   gate->hash_alt                 = (void*)&decred_hash;
-  gate->get_max64                = (void*)&decred_get_max64;
+//  gate->get_max64                = (void*)&decred_get_max64;
+  gate->get_max64                = (void*)&get_max64_0x3fffffLL;
   gate->set_data_and_target_size = (void*)&decred_set_data_and_target_size;
   gate->display_pok              = (void*)&decred_decode_extradata;
   gate->get_xnonce2str           = (void*)&decred_get_xnonce2str;
-  gate->reverse_endian_17_19     = (void*)&decred_reverse_endian_34_35; 
-  gate->set_data_size            = (void*)&decred_set_data_size;
+  gate->encode_endian_17_19      = (void*)&decred_reverse_endian_34_35; 
+//  gate->set_data_size            = (void*)&decred_set_data_size;
+  gate->suw_build_hex_string     = (void*)&decred_suw_build_hex_string;
   gate->gen_merkle_root          = (void*)&decred_gen_merkle_root;
   gate->build_extraheader        = (void*)&decred_build_extraheader;
   gate->ignore_pok               = (void*)&decred_regen_work;

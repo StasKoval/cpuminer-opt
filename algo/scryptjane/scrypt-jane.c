@@ -229,11 +229,12 @@ void scryptjane_set_target( struct work* work, double job_diff )
 {
  work_set_target( work, job_diff / (65536.0 * opt_diff_factor) );
 }
-
+/*
 int64_t scryptjane_get_max64()
 {
   return 0x40LL;
 }
+*/
 
 bool register_scryptjane_algo( algo_gate_t* gate )
 {
@@ -241,8 +242,10 @@ bool register_scryptjane_algo( algo_gate_t* gate )
     gate->scanhash   = (void*)&scanhash_scryptjane;
     gate->hash       = (void*)&scryptjanehash;
     gate->hash_alt   = (void*)&scryptjanehash;
-    gate->set_target = (void*)&scryptjane_set_target;
-    gate->get_max64  = (void*)&scryptjane_get_max64;
+//    gate->set_target = (void*)&scryptjane_set_target;
+    gate->set_target = (void*)&scrypt_set_target;
+    gate->get_max64  = (void*)&get_max64_0x40LL;
+//    gate->get_max64  = (void*)&scryptjane_get_max64;
     if ( opt_nfactor == 0 )
        opt_nfactor = 16;
     return true;
