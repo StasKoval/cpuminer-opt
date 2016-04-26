@@ -6,7 +6,8 @@
 #
 
 FROM		ubuntu:16.04
-MAINTAINER	Guillaume J. Charmes <guillaume@charmes.net>
+#MAINTAINER	Guillaume J. Charmes <guillaume@charmes.net>
+ENV v=0.0.1
 
 RUN		apt-get update -qq
 
