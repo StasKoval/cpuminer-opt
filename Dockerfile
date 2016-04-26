@@ -5,14 +5,14 @@
 #
 #
 
-FROM		ubuntu:12.10
+FROM		ubuntu:16.04
 MAINTAINER	Guillaume J. Charmes <guillaume@charmes.net>
 
 RUN		apt-get update -qq
 
-RUN		apt-get install -qqy automake
-RUN		apt-get install -qqy libcurl4-openssl-dev
-RUN		apt-get install -qqy git
+RUN		apt-get install -qqy automake gcc
+RUN		apt-get install -qqy libssl-dev libcurl4-openssl-dev libjansson-dev
+RUN		apt-get install -qqy git git libboost-dev libboost-system-dev  libboost-thread-dev
 RUN		apt-get install -qqy make
 
 RUN		git clone https://github.com/pooler/cpuminer
